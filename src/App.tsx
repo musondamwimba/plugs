@@ -24,7 +24,9 @@ const queryClient = new QueryClient();
 
 const AppLayout = ({ children }: { children: React.ReactNode }) => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const isAdmin = true; // TODO: Replace with actual auth logic
+  // You can integrate your AuthContext here: const { user } = useAuth();
+  // Then set: const isAdmin = user?.role === "admin";
+  const isAdmin = false; // Set to false by default - update with your auth
 
   return (
     <div className="min-h-screen bg-background">
