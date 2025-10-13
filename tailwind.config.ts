@@ -31,6 +31,14 @@ export default {
           DEFAULT: "hsl(var(--destructive))",
           foreground: "hsl(var(--destructive-foreground))",
         },
+        success: {
+          DEFAULT: "hsl(var(--success))",
+          foreground: "hsl(var(--success-foreground))",
+        },
+        warning: {
+          DEFAULT: "hsl(var(--warning))",
+          foreground: "hsl(var(--warning-foreground))",
+        },
         muted: {
           DEFAULT: "hsl(var(--muted))",
           foreground: "hsl(var(--muted-foreground))",
@@ -50,12 +58,21 @@ export default {
         sidebar: {
           DEFAULT: "hsl(var(--sidebar-background))",
           foreground: "hsl(var(--sidebar-foreground))",
-          primary: "hsl(var(--sidebar-primary))",
-          "primary-foreground": "hsl(var(--sidebar-primary-foreground))",
-          accent: "hsl(var(--sidebar-accent))",
-          "accent-foreground": "hsl(var(--sidebar-accent-foreground))",
           border: "hsl(var(--sidebar-border))",
-          ring: "hsl(var(--sidebar-ring))",
+          active: "hsl(var(--sidebar-active))",
+          "active-foreground": "hsl(var(--sidebar-active-foreground))",
+        },
+        icon: {
+          home: "hsl(var(--icon-home))",
+          map: "hsl(var(--icon-map))",
+          messages: "hsl(var(--icon-messages))",
+          uploads: "hsl(var(--icon-uploads))",
+          products: "hsl(var(--icon-products))",
+          profile: "hsl(var(--icon-profile))",
+          admin: "hsl(var(--icon-admin))",
+          cart: "hsl(var(--icon-cart))",
+          wishlist: "hsl(var(--icon-wishlist))",
+          favorites: "hsl(var(--icon-favorites))",
         },
       },
       borderRadius: {
