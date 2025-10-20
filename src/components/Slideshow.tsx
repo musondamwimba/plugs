@@ -21,6 +21,18 @@ const slides = [
     description: "Get your products delivered quickly",
     color: "from-orange-500 to-red-600"
   },
+  {
+    id: 4,
+    title: "Bid for Goods",
+    description: "Participate in exciting auctions",
+    color: "from-green-500 to-teal-600"
+  },
+  {
+    id: 5,
+    title: "Search for Services",
+    description: "Find services you need nearby",
+    color: "from-cyan-500 to-blue-600"
+  },
 ];
 
 const Slideshow = () => {

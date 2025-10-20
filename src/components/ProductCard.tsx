@@ -1,6 +1,7 @@
+import { useState } from "react";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ShoppingCart, Heart } from "lucide-react";
+import { ShoppingCart, Heart, Star } from "lucide-react";
 
 interface ProductCardProps {
   name: string;
@@ -10,6 +11,8 @@ interface ProductCardProps {
 }
 
 const ProductCard = ({ name, price, image, description }: ProductCardProps) => {
+  const [isFavorite, setIsFavorite] = useState(false);
+  const [isWishlist, setIsWishlist] = useState(false);
   return (
     <Card className="overflow-hidden hover:shadow-lg transition-shadow duration-300">
       <div className="aspect-square bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center">
@@ -31,8 +34,29 @@ const ProductCard = ({ name, price, image, description }: ProductCardProps) => {
           <ShoppingCart className="w-4 h-4" />
           Add to Cart
         </Button>
-        <Button variant="outline" size="icon">
-          <Heart className="w-4 h-4 text-icon-wishlist" />
+        <Button 
+          variant="outline" 
+          size="icon"
+          onClick={() => setIsFavorite(!isFavorite)}
+          className="transition-colors"
+        >
+          <Heart 
+            className={`w-4 h-4 transition-colors ${
+              isFavorite ? "fill-red-500 text-red-500" : "text-icon-wishlist"
+            }`}
+          />
+        </Button>
+        <Button 
+          variant="outline" 
+          size="icon"
+          onClick={() => setIsWishlist(!isWishlist)}
+          className="transition-colors"
+        >
+          <Star 
+            className={`w-4 h-4 transition-colors ${
+              isWishlist ? "fill-yellow-500 text-yellow-500" : "text-icon-favorites"
+            }`}
+          />
         </Button>
       </CardFooter>
     </Card>
