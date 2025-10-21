@@ -2,13 +2,14 @@ import { useState } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Menu } from "lucide-react";
 import AppSidebar from "@/components/AppSidebar";
 import TopButtons from "@/components/TopButtons";
+import { ProtectedRoute } from "@/components/ProtectedRoute";
 import Index from "./pages/Index";
+import Auth from "./pages/Auth";
 import Map from "./pages/Map";
 import Messages from "./pages/Messages";
 import Uploads from "./pages/Uploads";
@@ -19,8 +20,6 @@ import Cart from "./pages/Cart";
 import Favorites from "./pages/Favorites";
 import Wishlist from "./pages/Wishlist";
 import NotFound from "./pages/NotFound";
-
-const queryClient = new QueryClient();
 
 const AppLayout = ({ children }: { children: React.ReactNode }) => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -62,27 +61,26 @@ const AppLayout = ({ children }: { children: React.ReactNode }) => {
 };
 
 const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
-      <Toaster />
-      <Sonner />
-      <BrowserRouter>
-        <Routes>
-          <Route path="/" element={<AppLayout><Index /></AppLayout>} />
-          <Route path="/map" element={<AppLayout><Map /></AppLayout>} />
-          <Route path="/messages" element={<AppLayout><Messages /></AppLayout>} />
-          <Route path="/uploads" element={<AppLayout><Uploads /></AppLayout>} />
-          <Route path="/my-products" element={<AppLayout><MyProducts /></AppLayout>} />
-          <Route path="/profile" element={<AppLayout><Profile /></AppLayout>} />
-          <Route path="/admin" element={<AppLayout><Admin /></AppLayout>} />
-          <Route path="/cart" element={<AppLayout><Cart /></AppLayout>} />
-          <Route path="/favorites" element={<AppLayout><Favorites /></AppLayout>} />
-          <Route path="/wishlist" element={<AppLayout><Wishlist /></AppLayout>} />
-          <Route path="*" element={<NotFound />} />
-        </Routes>
-      </BrowserRouter>
-    </TooltipProvider>
-  </QueryClientProvider>
+  <TooltipProvider>
+    <Toaster />
+    <Sonner />
+    <BrowserRouter>
+      <Routes>
+        <Route path="/auth" element={<Auth />} />
+        <Route path="/" element={<ProtectedRoute><AppLayout><Index /></AppLayout></ProtectedRoute>} />
+        <Route path="/map" element={<ProtectedRoute><AppLayout><Map /></AppLayout></ProtectedRoute>} />
+        <Route path="/messages" element={<ProtectedRoute><AppLayout><Messages /></AppLayout></ProtectedRoute>} />
+        <Route path="/uploads" element={<ProtectedRoute><AppLayout><Uploads /></AppLayout></ProtectedRoute>} />
+        <Route path="/my-products" element={<ProtectedRoute><AppLayout><MyProducts /></AppLayout></ProtectedRoute>} />
+        <Route path="/profile" element={<ProtectedRoute><AppLayout><Profile /></AppLayout></ProtectedRoute>} />
+        <Route path="/admin" element={<ProtectedRoute><AppLayout><Admin /></AppLayout></ProtectedRoute>} />
+        <Route path="/cart" element={<ProtectedRoute><AppLayout><Cart /></AppLayout></ProtectedRoute>} />
+        <Route path="/favorites" element={<ProtectedRoute><AppLayout><Favorites /></AppLayout></ProtectedRoute>} />
+        <Route path="/wishlist" element={<ProtectedRoute><AppLayout><Wishlist /></AppLayout></ProtectedRoute>} />
+        <Route path="*" element={<NotFound />} />
+      </Routes>
+    </BrowserRouter>
+  </TooltipProvider>
 );
 
 export default App;

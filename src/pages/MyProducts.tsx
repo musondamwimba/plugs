@@ -1,12 +1,13 @@
 import { Button } from "@/components/ui/button";
 import ProductCard from "@/components/ProductCard";
 import { Plus } from "lucide-react";
+import { useMyProducts } from "@/hooks/useProducts";
+import { Skeleton } from "@/components/ui/skeleton";
+import { useNavigate } from "react-router-dom";
 
 const MyProducts = () => {
-  const myProducts = [
-    { id: 1, name: "My Laptop", price: 899.99, description: "Gently used laptop" },
-    { id: 2, name: "Gaming Mouse", price: 59.99, description: "RGB gaming mouse" },
-  ];
+  const { products, isLoading } = useMyProducts();
+  const navigate = useNavigate();
 
   return (
     <div className="space-y-6">
@@ -18,9 +19,25 @@ const MyProducts = () => {
         </Button>
       </div>
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-        {myProducts.map((product) => (
-          <ProductCard key={product.id} {...product} />
-        ))}
+        {isLoading ? (
+          Array.from({ length: 3 }).map((_, i) => (
+            <Skeleton key={i} className="h-80 rounded-lg" />
+          ))
+        ) : products && products.length > 0 ? (
+          products.map((product) => (
+            <ProductCard 
+              key={product.id}
+              name={product.name}
+              price={product.price}
+              description={product.description || ''}
+              image={product.product_images?.[0]?.image_url}
+            />
+          ))
+        ) : (
+          <div className="col-span-full text-center py-12">
+            <p className="text-muted-foreground">You haven't listed any products yet</p>
+          </div>
+        )}
       </div>
     </div>
   );

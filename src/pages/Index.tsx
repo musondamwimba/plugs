@@ -2,25 +2,18 @@ import { useState } from "react";
 import SearchBar from "@/components/SearchBar";
 import Slideshow from "@/components/Slideshow";
 import ProductCard from "@/components/ProductCard";
+import { useProducts } from "@/hooks/useProducts";
+import { Skeleton } from "@/components/ui/skeleton";
 
 const Index = () => {
   const [searchQuery, setSearchQuery] = useState("");
-
-  // Sample products
-  const products = [
-    { id: 1, name: "Premium Headphones", price: 299.99, description: "High-quality wireless headphones" },
-    { id: 2, name: "Smart Watch", price: 199.99, description: "Track your fitness goals" },
-    { id: 3, name: "Laptop Stand", price: 49.99, description: "Ergonomic aluminum stand" },
-    { id: 4, name: "Wireless Mouse", price: 29.99, description: "Precision gaming mouse" },
-    { id: 5, name: "USB-C Hub", price: 79.99, description: "7-in-1 connectivity solution" },
-    { id: 6, name: "Phone Case", price: 19.99, description: "Durable protective case" },
-  ];
+  const { products, isLoading } = useProducts();
 
   const handleSearch = (query: string) => {
     setSearchQuery(query);
   };
 
-  const filteredProducts = searchQuery
+  const filteredProducts = searchQuery && products
     ? products.filter(p => 
         p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
         p.description?.toLowerCase().includes(searchQuery.toLowerCase())
@@ -47,9 +40,25 @@ const Index = () => {
       <div>
         <h2 className="text-3xl font-bold mb-6">Featured Products</h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredProducts.map((product) => (
-            <ProductCard key={product.id} {...product} />
-          ))}
+          {isLoading ? (
+            Array.from({ length: 6 }).map((_, i) => (
+              <Skeleton key={i} className="h-80 rounded-lg" />
+            ))
+          ) : filteredProducts && filteredProducts.length > 0 ? (
+            filteredProducts.map((product) => (
+              <ProductCard 
+                key={product.id}
+                name={product.name}
+                price={product.price}
+                description={product.description || ''}
+                image={product.product_images?.[0]?.image_url}
+              />
+            ))
+          ) : (
+            <div className="col-span-full text-center py-12">
+              <p className="text-muted-foreground">No products available yet</p>
+            </div>
+          )}
         </div>
       </div>
     </div>

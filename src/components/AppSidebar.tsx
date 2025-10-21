@@ -2,6 +2,7 @@ import { Home, MapPin, MessageSquare, Upload, Package, User, Shield, LogOut } fr
 import { Link, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface AppSidebarProps {
   isOpen: boolean;
@@ -11,6 +12,7 @@ interface AppSidebarProps {
 
 const AppSidebar = ({ isOpen, onClose, isAdmin = false }: AppSidebarProps) => {
   const location = useLocation();
+  const { signOut } = useAuth();
   
   const navItems = [
     { path: "/", label: "Home", icon: Home, color: "text-icon-home" },
@@ -84,6 +86,7 @@ const AppSidebar = ({ isOpen, onClose, isAdmin = false }: AppSidebarProps) => {
           <Button
             variant="destructive"
             className="w-full mt-auto flex items-center gap-2"
+            onClick={() => signOut()}
           >
             <LogOut className="w-4 h-4" />
             Logout
