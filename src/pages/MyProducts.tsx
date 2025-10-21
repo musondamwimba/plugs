@@ -13,7 +13,7 @@ const MyProducts = () => {
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <h1 className="text-3xl font-bold">My Products</h1>
-        <Button className="gap-2">
+        <Button className="gap-2" onClick={() => navigate('/uploads')}>
           <Plus className="w-4 h-4" />
           Add Product
         </Button>
@@ -27,6 +27,7 @@ const MyProducts = () => {
           products.map((product) => (
             <ProductCard 
               key={product.id}
+              id={product.id}
               name={product.name}
               price={product.price}
               description={product.description || ''}
