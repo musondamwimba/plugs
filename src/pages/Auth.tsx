@@ -1,32 +1,40 @@
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { useAuth } from '@/contexts/AuthContext';
-import { useToast } from '@/hooks/use-toast';
-import { Loader2 } from 'lucide-react';
+import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import { useAuth } from "@/contexts/AuthContext";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Switch } from "@/components/ui/switch";
+import { useToast } from "@/hooks/use-toast";
+import { Loader2, Eye, EyeOff } from "lucide-react";
 
 const Auth = () => {
   const navigate = useNavigate();
   const { signIn, signUp, user } = useAuth();
   const { toast } = useToast();
-  const [loading, setLoading] = useState(false);
-  
-  const [loginData, setLoginData] = useState({ email: '', password: '' });
+  const [loginData, setLoginData] = useState({ email: "", password: "", showPassword: false });
   const [signupData, setSignupData] = useState({ 
-    email: '', 
-    password: '', 
-    fullName: '', 
-    phoneNumber: '' 
+    email: "", 
+    password: "",
+    confirmPassword: "",
+    fullName: "", 
+    phoneNumber: "",
+    wantsToBeVendor: false,
+    nrcNumber: "",
+    showPassword: false,
+    showConfirmPassword: false,
   });
+  const [forgotPasswordEmail, setForgotPasswordEmail] = useState("");
+  const [showForgotPassword, setShowForgotPassword] = useState(false);
+  const [loading, setLoading] = useState(false);
 
-  if (user) {
-    navigate('/');
-    return null;
-  }
+  useEffect(() => {
+    if (user) {
+      navigate('/');
+    }
+  }, [user, navigate]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -43,7 +51,6 @@ const Auth = () => {
     } else {
       toast({
         title: "Welcome back!",
-        description: "You've successfully logged in.",
       });
       navigate('/');
     }
@@ -52,15 +59,32 @@ const Auth = () => {
 
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (signupData.password !== signupData.confirmPassword) {
+      toast({
+        title: "Passwords don't match",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (signupData.wantsToBeVendor && !signupData.nrcNumber) {
+      toast({
+        title: "NRC required for vendors",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setLoading(true);
     
     const { error } = await signUp(
       signupData.email, 
-      signupData.password, 
-      signupData.fullName, 
+      signupData.password,
+      signupData.fullName,
       signupData.phoneNumber
     );
-    
+
     if (error) {
       toast({
         title: "Signup failed",
@@ -70,10 +94,10 @@ const Auth = () => {
     } else {
       toast({
         title: "Account created!",
-        description: "Welcome to PluGS. You can now start exploring.",
       });
       navigate('/');
     }
+    
     setLoading(false);
   };
 
@@ -82,7 +106,7 @@ const Auth = () => {
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">
           <CardTitle className="text-3xl font-bold">PluGS</CardTitle>
-          <CardDescription>Your local marketplace for goods and services</CardDescription>
+          <CardDescription>Your local marketplace</CardDescription>
         </CardHeader>
         <CardContent>
           <Tabs defaultValue="login" className="w-full">
@@ -92,83 +116,107 @@ const Auth = () => {
             </TabsList>
             
             <TabsContent value="login">
-              <form onSubmit={handleLogin} className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="login-email">Email</Label>
+              {showForgotPassword ? (
+                <div className="space-y-4">
                   <Input
-                    id="login-email"
                     type="email"
-                    placeholder="you@example.com"
-                    value={loginData.email}
-                    onChange={(e) => setLoginData({ ...loginData, email: e.target.value })}
-                    required
+                    value={forgotPasswordEmail}
+                    onChange={(e) => setForgotPasswordEmail(e.target.value)}
+                    placeholder="Enter your email"
                   />
+                  <Button onClick={() => { toast({ title: "Reset email sent" }); setShowForgotPassword(false); }} className="w-full">
+                    Reset Password
+                  </Button>
+                  <Button variant="outline" onClick={() => setShowForgotPassword(false)} className="w-full">
+                    Cancel
+                  </Button>
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="login-password">Password</Label>
-                  <Input
-                    id="login-password"
-                    type="password"
-                    value={loginData.password}
-                    onChange={(e) => setLoginData({ ...loginData, password: e.target.value })}
-                    required
-                  />
-                </div>
-                <Button type="submit" className="w-full" disabled={loading}>
-                  {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                  Login
-                </Button>
-              </form>
+              ) : (
+                <form onSubmit={handleLogin} className="space-y-4">
+                  <div className="space-y-2">
+                    <Label>Email</Label>
+                    <Input
+                      type="email"
+                      value={loginData.email}
+                      onChange={(e) => setLoginData({ ...loginData, email: e.target.value })}
+                      required
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Password</Label>
+                    <div className="relative">
+                      <Input
+                        type={loginData.showPassword ? "text" : "password"}
+                        value={loginData.password}
+                        onChange={(e) => setLoginData({ ...loginData, password: e.target.value })}
+                        required
+                      />
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        className="absolute right-0 top-0"
+                        onClick={() => setLoginData({ ...loginData, showPassword: !loginData.showPassword })}
+                      >
+                        {loginData.showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                      </Button>
+                    </div>
+                  </div>
+                  <Button type="submit" className="w-full" disabled={loading}>
+                    {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                    Sign In
+                  </Button>
+                  <Button type="button" variant="link" className="w-full" onClick={() => setShowForgotPassword(true)}>
+                    Forgot Password?
+                  </Button>
+                </form>
+              )}
             </TabsContent>
             
             <TabsContent value="signup">
               <form onSubmit={handleSignup} className="space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="signup-name">Full Name</Label>
-                  <Input
-                    id="signup-name"
-                    type="text"
-                    placeholder="John Doe"
-                    value={signupData.fullName}
-                    onChange={(e) => setSignupData({ ...signupData, fullName: e.target.value })}
-                    required
-                  />
+                  <Label>Full Name</Label>
+                  <Input value={signupData.fullName} onChange={(e) => setSignupData({ ...signupData, fullName: e.target.value })} required />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="signup-phone">Phone Number</Label>
-                  <Input
-                    id="signup-phone"
-                    type="tel"
-                    placeholder="+260 XXX XXX XXX"
-                    value={signupData.phoneNumber}
-                    onChange={(e) => setSignupData({ ...signupData, phoneNumber: e.target.value })}
-                    required
-                  />
+                  <Label>Email</Label>
+                  <Input type="email" value={signupData.email} onChange={(e) => setSignupData({ ...signupData, email: e.target.value })} required />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="signup-email">Email</Label>
-                  <Input
-                    id="signup-email"
-                    type="email"
-                    placeholder="you@example.com"
-                    value={signupData.email}
-                    onChange={(e) => setSignupData({ ...signupData, email: e.target.value })}
-                    required
-                  />
+                  <Label>Phone</Label>
+                  <Input type="tel" value={signupData.phoneNumber} onChange={(e) => setSignupData({ ...signupData, phoneNumber: e.target.value })} required />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="signup-password">Password</Label>
-                  <Input
-                    id="signup-password"
-                    type="password"
-                    value={signupData.password}
-                    onChange={(e) => setSignupData({ ...signupData, password: e.target.value })}
-                    required
-                    minLength={6}
-                  />
+                  <Label>Password</Label>
+                  <div className="relative">
+                    <Input type={signupData.showPassword ? "text" : "password"} value={signupData.password} onChange={(e) => setSignupData({ ...signupData, password: e.target.value })} required />
+                    <Button type="button" variant="ghost" size="icon" className="absolute right-0 top-0" onClick={() => setSignupData({ ...signupData, showPassword: !signupData.showPassword })}>
+                      {signupData.showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                    </Button>
+                  </div>
                 </div>
+                <div className="space-y-2">
+                  <Label>Confirm Password</Label>
+                  <div className="relative">
+                    <Input type={signupData.showConfirmPassword ? "text" : "password"} value={signupData.confirmPassword} onChange={(e) => setSignupData({ ...signupData, confirmPassword: e.target.value })} required />
+                    <Button type="button" variant="ghost" size="icon" className="absolute right-0 top-0" onClick={() => setSignupData({ ...signupData, showConfirmPassword: !signupData.showConfirmPassword })}>
+                      {signupData.showConfirmPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                    </Button>
+                  </div>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <Switch checked={signupData.wantsToBeVendor} onCheckedChange={(checked) => setSignupData({ ...signupData, wantsToBeVendor: checked })} />
+                  <Label>I want to be a vendor</Label>
+                </div>
+                {signupData.wantsToBeVendor && (
+                  <div className="space-y-2">
+                    <Label>NRC Number</Label>
+                    <Input value={signupData.nrcNumber} onChange={(e) => setSignupData({ ...signupData, nrcNumber: e.target.value })} required />
+                  </div>
+                )}
                 <Button type="submit" className="w-full" disabled={loading}>
-                  {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                  {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
                   Sign Up
                 </Button>
               </form>

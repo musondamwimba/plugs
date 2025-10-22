@@ -14,7 +14,12 @@ import Map from "./pages/Map";
 import Messages from "./pages/Messages";
 import Uploads from "./pages/Uploads";
 import MyProducts from "./pages/MyProducts";
-import Profile from "./pages/Profile";
+import ProfileMenu from "./pages/ProfileMenu";
+import PersonalInfo from "./pages/PersonalInfo";
+import Deposit from "./pages/Deposit";
+import Withdraw from "./pages/Withdraw";
+import TransactionHistory from "./pages/TransactionHistory";
+import Subscriptions from "./pages/Subscriptions";
 import Admin from "./pages/Admin";
 import Cart from "./pages/Cart";
 import Favorites from "./pages/Favorites";
@@ -72,7 +77,12 @@ const App = () => (
         <Route path="/messages" element={<ProtectedRoute><AppLayout><Messages /></AppLayout></ProtectedRoute>} />
         <Route path="/uploads" element={<ProtectedRoute><AppLayout><Uploads /></AppLayout></ProtectedRoute>} />
         <Route path="/my-products" element={<ProtectedRoute><AppLayout><MyProducts /></AppLayout></ProtectedRoute>} />
-        <Route path="/profile" element={<ProtectedRoute><AppLayout><Profile /></AppLayout></ProtectedRoute>} />
+        <Route path="/profile" element={<ProtectedRoute><AppLayout><ProfileMenu /></AppLayout></ProtectedRoute>} />
+        <Route path="/profile/personal-info" element={<ProtectedRoute><AppLayout><PersonalInfo /></AppLayout></ProtectedRoute>} />
+        <Route path="/profile/deposit" element={<ProtectedRoute><AppLayout><Deposit /></AppLayout></ProtectedRoute>} />
+        <Route path="/profile/withdraw" element={<ProtectedRoute><AppLayout><Withdraw /></AppLayout></ProtectedRoute>} />
+        <Route path="/profile/transactions" element={<ProtectedRoute><AppLayout><TransactionHistory /></AppLayout></ProtectedRoute>} />
+        <Route path="/profile/subscriptions" element={<ProtectedRoute><AppLayout><Subscriptions /></AppLayout></ProtectedRoute>} />
         <Route path="/admin" element={<ProtectedRoute><AppLayout><Admin /></AppLayout></ProtectedRoute>} />
         <Route path="/cart" element={<ProtectedRoute><AppLayout><Cart /></AppLayout></ProtectedRoute>} />
         <Route path="/favorites" element={<ProtectedRoute><AppLayout><Favorites /></AppLayout></ProtectedRoute>} />

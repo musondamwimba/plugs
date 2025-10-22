@@ -81,6 +81,36 @@ export type Database = {
           },
         ]
       }
+      deposits: {
+        Row: {
+          amount: number
+          created_at: string | null
+          fee: number
+          id: string
+          payment_method: string
+          status: string | null
+          user_id: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string | null
+          fee: number
+          id?: string
+          payment_method: string
+          status?: string | null
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string | null
+          fee?: number
+          id?: string
+          payment_method?: string
+          status?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       favorites: {
         Row: {
           created_at: string | null
@@ -297,8 +327,10 @@ export type Database = {
           nrc_number: string | null
           phone_number: string | null
           profile_picture_url: string | null
+          total_ratings: number | null
           trading_license_url: string | null
           updated_at: string | null
+          vendor_rating: number | null
         }
         Insert: {
           created_at?: string | null
@@ -309,8 +341,10 @@ export type Database = {
           nrc_number?: string | null
           phone_number?: string | null
           profile_picture_url?: string | null
+          total_ratings?: number | null
           trading_license_url?: string | null
           updated_at?: string | null
+          vendor_rating?: number | null
         }
         Update: {
           created_at?: string | null
@@ -321,8 +355,78 @@ export type Database = {
           nrc_number?: string | null
           phone_number?: string | null
           profile_picture_url?: string | null
+          total_ratings?: number | null
           trading_license_url?: string | null
           updated_at?: string | null
+          vendor_rating?: number | null
+        }
+        Relationships: []
+      }
+      subscriptions: {
+        Row: {
+          amount: number
+          created_at: string | null
+          due_date: string
+          id: string
+          product_id: string
+          status: string | null
+          user_id: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string | null
+          due_date: string
+          id?: string
+          product_id: string
+          status?: string | null
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string | null
+          due_date?: string
+          id?: string
+          product_id?: string
+          status?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "subscriptions_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      transactions: {
+        Row: {
+          amount: number
+          created_at: string | null
+          description: string | null
+          id: string
+          invoice_url: string | null
+          type: string
+          user_id: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          invoice_url?: string | null
+          type: string
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          invoice_url?: string | null
+          type?: string
+          user_id?: string
         }
         Relationships: []
       }
@@ -343,6 +447,33 @@ export type Database = {
           assigned_at?: string | null
           id?: string
           role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
+      withdrawals: {
+        Row: {
+          amount: number
+          created_at: string | null
+          fee: number
+          id: string
+          status: string | null
+          user_id: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string | null
+          fee: number
+          id?: string
+          status?: string | null
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string | null
+          fee?: number
+          id?: string
+          status?: string | null
           user_id?: string
         }
         Relationships: []

@@ -15,6 +15,10 @@ const ProductUploadForm = () => {
   const queryClient = useQueryClient();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [images, setImages] = useState<File[]>([]);
+  const [documents, setDocuments] = useState<File[]>([]);
+  const [locations, setLocations] = useState<Array<{ lat: number; lng: number }>>([]);
+  const [useProfilePic, setUseProfilePic] = useState(false);
+  const [primaryImageIndex, setPrimaryImageIndex] = useState(0);
   const [formData, setFormData] = useState({
     name: "",
     description: "",
@@ -26,12 +30,53 @@ const ProductUploadForm = () => {
     starting_bid: "",
     bid_end_time: "",
     cash_only: false,
+    mobile_location: false,
   });
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
       setImages(Array.from(e.target.files));
     }
+  };
+
+  const handleDocumentChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files) {
+      setDocuments(Array.from(e.target.files));
+      toast({
+        title: "Document visibility",
+        description: "These documents will be visible to all users viewing your product.",
+      });
+    }
+  };
+
+  const handleAddLocation = () => {
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          setLocations([...locations, { 
+            lat: position.coords.latitude, 
+            lng: position.coords.longitude 
+          }]);
+          if (locations.length > 0) {
+            toast({
+              title: "Additional location charge",
+              description: "Multiple locations will incur additional charges.",
+            });
+          }
+        },
+        () => {
+          toast({
+            title: "Location access denied",
+            description: "Please enable location services to add your location.",
+            variant: "destructive",
+          });
+        }
+      );
+    }
+  };
+
+  const handleRemoveLocation = (index: number) => {
+    setLocations(locations.filter((_, i) => i !== index));
   };
 
   const uploadImages = async (productId: string) => {
@@ -57,8 +102,40 @@ const ProductUploadForm = () => {
         .insert({
           product_id: productId,
           image_url: publicUrl,
-          is_primary: index === 0,
+          is_primary: index === primaryImageIndex,
           display_order: index,
+        });
+
+      if (dbError) throw dbError;
+    });
+
+    await Promise.all(uploadPromises);
+  };
+
+  const uploadDocuments = async (productId: string) => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) throw new Error('Not authenticated');
+
+    const uploadPromises = documents.map(async (document) => {
+      const fileExt = document.name.split('.').pop();
+      const fileName = `${user.id}/${productId}/${Date.now()}_${document.name}`;
+      
+      const { error: uploadError } = await supabase.storage
+        .from('product-documents')
+        .upload(fileName, document);
+
+      if (uploadError) throw uploadError;
+
+      const { data: { publicUrl } } = supabase.storage
+        .from('product-documents')
+        .getPublicUrl(fileName);
+
+      const { error: dbError } = await supabase
+        .from('product_documents')
+        .insert({
+          product_id: productId,
+          document_url: publicUrl,
+          document_type: fileExt,
         });
 
       if (dbError) throw dbError;
@@ -85,6 +162,10 @@ const ProductUploadForm = () => {
         location_address: formData.location_address,
         cash_only: formData.cash_only,
         is_bid: formData.is_bid,
+        mobile_location: formData.mobile_location,
+        use_profile_picture: useProfilePic,
+        location_lat: locations[0]?.lat,
+        location_lng: locations[0]?.lng,
       };
 
       if (formData.is_bid) {
@@ -102,6 +183,10 @@ const ProductUploadForm = () => {
 
       if (images.length > 0) {
         await uploadImages(product.id);
+      }
+
+      if (documents.length > 0) {
+        await uploadDocuments(product.id);
       }
 
       queryClient.invalidateQueries({ queryKey: ['my-products'] });
@@ -123,8 +208,13 @@ const ProductUploadForm = () => {
         starting_bid: "",
         bid_end_time: "",
         cash_only: false,
+        mobile_location: false,
       });
       setImages([]);
+      setDocuments([]);
+      setLocations([]);
+      setUseProfilePic(false);
+      setPrimaryImageIndex(0);
     } catch (error: any) {
       toast({
         title: "Error",
@@ -212,6 +302,42 @@ const ProductUploadForm = () => {
         />
       </div>
 
+      <div className="space-y-3">
+        <Label>Location on Map</Label>
+        <div className="flex gap-2">
+          <Button type="button" onClick={handleAddLocation}>
+            Add Current Location
+          </Button>
+          {formData.product_type === "service" && (
+            <div className="flex items-center space-x-2">
+              <Switch
+                id="mobile_location"
+                checked={formData.mobile_location}
+                onCheckedChange={(checked) => setFormData({ ...formData, mobile_location: checked })}
+              />
+              <Label htmlFor="mobile_location">Mobile Service</Label>
+            </div>
+          )}
+        </div>
+        {locations.length > 0 && (
+          <div className="space-y-2">
+            {locations.map((loc, index) => (
+              <div key={index} className="flex items-center justify-between bg-accent p-2 rounded">
+                <span className="text-sm">Location {index + 1}: {loc.lat.toFixed(4)}, {loc.lng.toFixed(4)}</span>
+                <Button
+                  type="button"
+                  variant="destructive"
+                  size="sm"
+                  onClick={() => handleRemoveLocation(index)}
+                >
+                  Remove
+                </Button>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
       <div className="flex items-center space-x-2">
         <Switch
           id="is_bid"
@@ -255,18 +381,67 @@ const ProductUploadForm = () => {
         <Label htmlFor="cash_only">Cash Only</Label>
       </div>
 
+      <div className="space-y-3">
+        <div className="flex items-center space-x-2">
+          <Switch
+            id="use_profile_pic"
+            checked={useProfilePic}
+            onCheckedChange={setUseProfilePic}
+          />
+          <Label htmlFor="use_profile_pic">Use Profile Picture</Label>
+        </div>
+
+        {!useProfilePic && (
+          <>
+            <Label htmlFor="images">Product Images</Label>
+            <Input
+              id="images"
+              type="file"
+              accept="image/*"
+              multiple
+              onChange={handleImageChange}
+            />
+            {images.length > 0 && (
+              <div className="space-y-2 mt-2">
+                <p className="text-sm text-muted-foreground">
+                  {images.length} image(s) selected
+                </p>
+                <div>
+                  <Label>Select Primary Image</Label>
+                  <Select
+                    value={primaryImageIndex.toString()}
+                    onValueChange={(value) => setPrimaryImageIndex(parseInt(value))}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {images.map((_, index) => (
+                        <SelectItem key={index} value={index.toString()}>
+                          Image {index + 1}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+            )}
+          </>
+        )}
+      </div>
+
       <div>
-        <Label htmlFor="images">Product Images</Label>
+        <Label htmlFor="documents">Supporting Documents (Optional)</Label>
         <Input
-          id="images"
+          id="documents"
           type="file"
-          accept="image/*"
+          accept=".pdf,.doc,.docx,image/*"
           multiple
-          onChange={handleImageChange}
+          onChange={handleDocumentChange}
         />
-        {images.length > 0 && (
+        {documents.length > 0 && (
           <p className="text-sm text-muted-foreground mt-2">
-            {images.length} image(s) selected
+            {documents.length} document(s) selected
           </p>
         )}
       </div>
