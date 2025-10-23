@@ -1,36 +1,56 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ArrowLeft } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { useProfile } from "@/hooks/useProfile";
 
 const Withdraw = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { profile } = useProfile();
   const [amount, setAmount] = useState("");
-  const [balance, setBalance] = useState(0);
+  const [paymentMethod, setPaymentMethod] = useState("mobile_money");
+  const [accountNumber, setAccountNumber] = useState("");
+  const [phoneNumber, setPhoneNumber] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const withdrawalFee = 50; // Fixed fee
+  const withdrawalFee = 50;
 
   const handleWithdraw = async () => {
     if (!amount || parseFloat(amount) <= 0) {
       toast({
-        title: "Invalid amount",
-        description: "Please enter a valid amount",
+        title: "Please enter a valid amount",
         variant: "destructive",
       });
       return;
     }
 
-    if (parseFloat(amount) + withdrawalFee > balance) {
+    if ((profile?.balance || 0) < parseFloat(amount) + withdrawalFee) {
       toast({
         title: "Insufficient balance",
         description: "You don't have enough funds for this withdrawal",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (paymentMethod === "mobile_money" && !phoneNumber) {
+      toast({
+        title: "Please enter your phone number",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (paymentMethod === "bank_transfer" && !accountNumber) {
+      toast({
+        title: "Please enter your account number",
         variant: "destructive",
       });
       return;
@@ -47,20 +67,25 @@ const Withdraw = () => {
           user_id: user.id,
           amount: parseFloat(amount),
           fee: withdrawalFee,
+          payment_method: paymentMethod,
+          account_number: accountNumber || null,
+          phone_number: phoneNumber || null,
           status: 'pending',
         });
 
       if (error) throw error;
 
       toast({
-        title: "Withdrawal initiated",
-        description: "Your withdrawal request has been submitted",
+        title: "Withdrawal request submitted",
+        description: "Your withdrawal will be processed shortly",
       });
 
       setAmount("");
+      setAccountNumber("");
+      setPhoneNumber("");
     } catch (error: any) {
       toast({
-        title: "Error",
+        title: "Withdrawal failed",
         description: error.message,
         variant: "destructive",
       });
@@ -83,7 +108,7 @@ const Withdraw = () => {
           <CardTitle>Available Balance</CardTitle>
         </CardHeader>
         <CardContent>
-          <p className="text-3xl font-bold">MMK {balance.toFixed(2)}</p>
+          <p className="text-3xl font-bold">ZMK {(profile?.balance || 0).toFixed(2)}</p>
         </CardContent>
       </Card>
 
@@ -93,7 +118,7 @@ const Withdraw = () => {
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="amount">Amount (MMK)</Label>
+            <Label htmlFor="amount">Amount (ZMK)</Label>
             <Input
               id="amount"
               type="number"
@@ -104,19 +129,62 @@ const Withdraw = () => {
             />
           </div>
 
+          <div className="space-y-2">
+            <Label htmlFor="payment_method">Payment Method</Label>
+            <Select value={paymentMethod} onValueChange={setPaymentMethod}>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="mobile_money">Mobile Money</SelectItem>
+                <SelectItem value="bank_transfer">Bank Transfer</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          {paymentMethod === "mobile_money" && (
+            <div className="space-y-2">
+              <Label htmlFor="phone">Phone Number</Label>
+              <Input
+                id="phone"
+                type="tel"
+                value={phoneNumber}
+                onChange={(e) => setPhoneNumber(e.target.value)}
+                placeholder="+260..."
+              />
+            </div>
+          )}
+
+          {paymentMethod === "bank_transfer" && (
+            <div className="space-y-2">
+              <Label htmlFor="account">Account Number</Label>
+              <Input
+                id="account"
+                type="text"
+                value={accountNumber}
+                onChange={(e) => setAccountNumber(e.target.value)}
+                placeholder="Enter account number"
+              />
+            </div>
+          )}
+
           {amount && (
             <div className="p-4 bg-accent rounded-lg space-y-2">
               <div className="flex justify-between">
                 <span>Withdrawal Amount:</span>
-                <span className="font-semibold">MMK {parseFloat(amount).toFixed(2)}</span>
+                <span className="font-semibold">ZMK {parseFloat(amount).toFixed(2)}</span>
               </div>
               <div className="flex justify-between">
                 <span>Processing Fee:</span>
-                <span className="font-semibold">MMK {withdrawalFee.toFixed(2)}</span>
+                <span className="font-semibold">ZMK {withdrawalFee.toFixed(2)}</span>
               </div>
               <div className="flex justify-between border-t pt-2">
-                <span className="font-bold">Total Deducted:</span>
-                <span className="font-bold">MMK {(parseFloat(amount) + withdrawalFee).toFixed(2)}</span>
+                <span className="font-bold">You will receive:</span>
+                <span className="font-bold">ZMK {(parseFloat(amount)).toFixed(2)}</span>
+              </div>
+              <div className="flex justify-between text-sm text-muted-foreground">
+                <span>Total Deducted:</span>
+                <span>ZMK {(parseFloat(amount) + withdrawalFee).toFixed(2)}</span>
               </div>
             </div>
           )}

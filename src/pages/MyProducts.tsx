@@ -11,13 +11,8 @@ const MyProducts = () => {
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <h1 className="text-3xl font-bold">My Products</h1>
-        <Button className="gap-2" onClick={() => navigate('/uploads')}>
-          <Plus className="w-4 h-4" />
-          Add Product
-        </Button>
-      </div>
+      <h1 className="text-3xl font-bold">My Products</h1>
+      <p className="text-muted-foreground">All products uploaded in the Uploads page will appear here. Click to edit.</p>
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
         {isLoading ? (
           Array.from({ length: 3 }).map((_, i) => (

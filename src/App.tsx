@@ -8,6 +8,7 @@ import { Menu } from "lucide-react";
 import AppSidebar from "@/components/AppSidebar";
 import TopButtons from "@/components/TopButtons";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
+import { useRoles } from "@/hooks/useRoles";
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import Map from "./pages/Map";
@@ -23,14 +24,12 @@ import Subscriptions from "./pages/Subscriptions";
 import Admin from "./pages/Admin";
 import Cart from "./pages/Cart";
 import Favorites from "./pages/Favorites";
-import Wishlist from "./pages/Wishlist";
+import Checkout from "./pages/Checkout";
 import NotFound from "./pages/NotFound";
 
 const AppLayout = ({ children }: { children: React.ReactNode }) => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  // You can integrate your AuthContext here: const { user } = useAuth();
-  // Then set: const isAdmin = user?.role === "admin";
-  const isAdmin = false; // Set to false by default - update with your auth
+  const { isAdmin } = useRoles();
 
   return (
     <div className="min-h-screen bg-background">
@@ -85,8 +84,8 @@ const App = () => (
         <Route path="/profile/subscriptions" element={<ProtectedRoute><AppLayout><Subscriptions /></AppLayout></ProtectedRoute>} />
         <Route path="/admin" element={<ProtectedRoute><AppLayout><Admin /></AppLayout></ProtectedRoute>} />
         <Route path="/cart" element={<ProtectedRoute><AppLayout><Cart /></AppLayout></ProtectedRoute>} />
+        <Route path="/checkout" element={<ProtectedRoute><AppLayout><Checkout /></AppLayout></ProtectedRoute>} />
         <Route path="/favorites" element={<ProtectedRoute><AppLayout><Favorites /></AppLayout></ProtectedRoute>} />
-        <Route path="/wishlist" element={<ProtectedRoute><AppLayout><Wishlist /></AppLayout></ProtectedRoute>} />
         <Route path="*" element={<NotFound />} />
       </Routes>
     </BrowserRouter>

@@ -56,7 +56,7 @@ const Cart = () => {
                     <h3 className="font-semibold text-lg">{item.products.name}</h3>
                     <p className="text-muted-foreground">{item.products.description}</p>
                     <p className="text-lg font-bold mt-2">
-                      {item.products.price.toLocaleString()} MMK
+                      ZMK {item.products.price.toLocaleString()}
                     </p>
                     <p className="text-sm text-muted-foreground">Quantity: {item.quantity}</p>
                   </div>
@@ -79,18 +79,23 @@ const Cart = () => {
                 <div className="space-y-2">
                   <div className="flex justify-between">
                     <span>Subtotal</span>
-                    <span>{subtotal.toLocaleString()} MMK</span>
+                    <span>ZMK {subtotal.toLocaleString()}</span>
                   </div>
-                  <div className="flex justify-between">
-                    <span>Shipping</span>
-                    <span>Free</span>
+                  <div className="flex justify-between text-sm">
+                    <span>Admin Fee (5%)</span>
+                    <span>ZMK {(subtotal * 0.05).toLocaleString()}</span>
                   </div>
                   <div className="border-t pt-2 flex justify-between font-bold text-lg">
                     <span>Total</span>
-                    <span>{subtotal.toLocaleString()} MMK</span>
+                    <span>ZMK {(subtotal + subtotal * 0.05).toLocaleString()}</span>
                   </div>
                 </div>
-                <Button className="w-full">Proceed to Checkout</Button>
+                <p className="text-xs text-muted-foreground">
+                  * Contact courier or taxi services for delivery before checkout
+                </p>
+                <Button className="w-full" onClick={() => window.location.href = '/checkout'}>
+                  Proceed to Checkout
+                </Button>
               </CardContent>
             </Card>
           </div>

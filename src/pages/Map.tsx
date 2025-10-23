@@ -86,7 +86,7 @@ const Map = () => {
   };
 
   const handleAddToFavorites = (productId: string) => {
-    addFavorite({ product_id: productId });
+    addFavorite(productId);
   };
 
   if (!userLocation) {
@@ -198,7 +198,7 @@ const Map = () => {
             <Popup>
               <div className="w-48">
                 <h3 className="font-bold">{product.name}</h3>
-                <p className="text-sm text-muted-foreground">MMK {product.price}</p>
+                <p className="text-sm text-muted-foreground">ZMK {product.price}</p>
               </div>
             </Popup>
           </Marker>
@@ -218,7 +218,7 @@ const Map = () => {
                 />
               )}
               <h3 className="font-bold text-lg">{selectedProduct.name}</h3>
-              <p className="text-muted-foreground mb-3">MMK {selectedProduct.price}</p>
+              <p className="text-muted-foreground mb-3">ZMK {selectedProduct.price}</p>
               <div className="flex gap-2">
                 <Button
                   onClick={() => handleAddToCart(selectedProduct.id)}

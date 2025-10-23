@@ -48,6 +48,7 @@ export type Database = {
       }
       cart_items: {
         Row: {
+          cash_payment_requested: boolean | null
           created_at: string | null
           id: string
           product_id: string
@@ -56,6 +57,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          cash_payment_requested?: boolean | null
           created_at?: string | null
           id?: string
           product_id: string
@@ -64,6 +66,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          cash_payment_requested?: boolean | null
           created_at?: string | null
           id?: string
           product_id?: string
@@ -83,29 +86,35 @@ export type Database = {
       }
       deposits: {
         Row: {
+          account_number: string | null
           amount: number
           created_at: string | null
           fee: number
           id: string
           payment_method: string
+          phone_number: string | null
           status: string | null
           user_id: string
         }
         Insert: {
+          account_number?: string | null
           amount: number
           created_at?: string | null
           fee: number
           id?: string
           payment_method: string
+          phone_number?: string | null
           status?: string | null
           user_id: string
         }
         Update: {
+          account_number?: string | null
           amount?: number
           created_at?: string | null
           fee?: number
           id?: string
           payment_method?: string
+          phone_number?: string | null
           status?: string | null
           user_id?: string
         }
@@ -319,6 +328,7 @@ export type Database = {
       }
       profiles: {
         Row: {
+          balance: number | null
           created_at: string | null
           full_name: string
           id: string
@@ -333,6 +343,7 @@ export type Database = {
           vendor_rating: number | null
         }
         Insert: {
+          balance?: number | null
           created_at?: string | null
           full_name: string
           id: string
@@ -347,6 +358,7 @@ export type Database = {
           vendor_rating?: number | null
         }
         Update: {
+          balance?: number | null
           created_at?: string | null
           full_name?: string
           id?: string
@@ -402,6 +414,7 @@ export type Database = {
       }
       transactions: {
         Row: {
+          admin_fee: number | null
           amount: number
           created_at: string | null
           description: string | null
@@ -411,6 +424,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          admin_fee?: number | null
           amount: number
           created_at?: string | null
           description?: string | null
@@ -420,6 +434,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          admin_fee?: number | null
           amount?: number
           created_at?: string | null
           description?: string | null
@@ -453,26 +468,35 @@ export type Database = {
       }
       withdrawals: {
         Row: {
+          account_number: string | null
           amount: number
           created_at: string | null
           fee: number
           id: string
+          payment_method: string | null
+          phone_number: string | null
           status: string | null
           user_id: string
         }
         Insert: {
+          account_number?: string | null
           amount: number
           created_at?: string | null
           fee: number
           id?: string
+          payment_method?: string | null
+          phone_number?: string | null
           status?: string | null
           user_id: string
         }
         Update: {
+          account_number?: string | null
           amount?: number
           created_at?: string | null
           fee?: number
           id?: string
+          payment_method?: string | null
+          phone_number?: string | null
           status?: string | null
           user_id?: string
         }
