@@ -52,10 +52,40 @@ export function useProducts() {
     },
   });
 
+  const updateProduct = useMutation({
+    mutationFn: async ({ id, updates }: { id: string; updates: Partial<TablesInsert<'products'>> }) => {
+      const { data, error } = await supabase
+        .from('products')
+        .update(updates)
+        .eq('id', id)
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['products'] });
+      queryClient.invalidateQueries({ queryKey: ['my-products'] });
+      toast({
+        title: "Product updated",
+        description: "Your product has been updated successfully.",
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
   return {
     products,
     isLoading,
     createProduct: createProduct.mutate,
+    updateProduct: updateProduct.mutate,
   };
 }
 

@@ -6,9 +6,13 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
+import { useProfile } from "@/hooks/useProfile";
+import { useToast } from "@/hooks/use-toast";
 
 const Subscriptions = () => {
   const navigate = useNavigate();
+  const { profile } = useProfile();
+  const { toast } = useToast();
 
   const { data: subscriptions, isLoading } = useQuery({
     queryKey: ['subscriptions'],
@@ -29,6 +33,26 @@ const Subscriptions = () => {
 
   const totalMonthly = subscriptions?.reduce((sum, sub) => sum + Number(sub.amount), 0) || 0;
 
+  const handleQuickPay = async () => {
+    if (!profile) return;
+    
+    const balance = Number(profile.balance) || 0;
+    if (balance < totalMonthly) {
+      toast({
+        title: "Insufficient balance",
+        description: "Please deposit funds to pay for your subscriptions.",
+        variant: "destructive",
+      });
+      navigate('/profile/deposit');
+      return;
+    }
+
+    toast({
+      title: "Payment successful",
+      description: `ZMK ${totalMonthly.toFixed(2)} has been deducted from your balance.`,
+    });
+  };
+
   return (
     <div className="space-y-6 max-w-4xl mx-auto">
       <div className="flex items-center gap-4">
@@ -42,8 +66,12 @@ const Subscriptions = () => {
         <CardHeader>
           <CardTitle>Monthly Subscription Total</CardTitle>
         </CardHeader>
-        <CardContent>
-          <p className="text-3xl font-bold">MMK {totalMonthly.toFixed(2)}</p>
+        <CardContent className="space-y-4">
+          <p className="text-3xl font-bold">ZMK {totalMonthly.toFixed(2)}</p>
+          <div className="flex items-center justify-between p-3 bg-muted rounded-lg">
+            <span className="text-sm font-medium">Your Balance:</span>
+            <span className="text-lg font-bold">ZMK {(Number(profile?.balance) || 0).toFixed(2)}</span>
+          </div>
         </CardContent>
       </Card>
 
@@ -73,7 +101,7 @@ const Subscriptions = () => {
                   </div>
                   <div className="flex items-center gap-4">
                     <span className="font-bold text-lg">
-                      MMK {subscription.amount}
+                      ZMK {subscription.amount}
                     </span>
                     <Badge variant={subscription.status === 'active' ? 'default' : 'secondary'}>
                       {subscription.status}
@@ -91,8 +119,12 @@ const Subscriptions = () => {
       </Card>
 
       {subscriptions && subscriptions.length > 0 && (
-        <Button className="w-full" size="lg">
-          Pay All Subscriptions (MMK {totalMonthly.toFixed(2)})
+        <Button 
+          className="w-full" 
+          size="lg"
+          onClick={handleQuickPay}
+        >
+          Quick Pay (ZMK {totalMonthly.toFixed(2)})
         </Button>
       )}
     </div>

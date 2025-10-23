@@ -15,13 +15,15 @@ import Map from "./pages/Map";
 import Messages from "./pages/Messages";
 import Uploads from "./pages/Uploads";
 import MyProducts from "./pages/MyProducts";
+import Admin from "./pages/Admin";
 import ProfileMenu from "./pages/ProfileMenu";
+import ProductEdit from "./pages/ProductEdit";
+import ProductDetails from "./pages/ProductDetails";
 import PersonalInfo from "./pages/PersonalInfo";
 import Deposit from "./pages/Deposit";
 import Withdraw from "./pages/Withdraw";
 import TransactionHistory from "./pages/TransactionHistory";
 import Subscriptions from "./pages/Subscriptions";
-import Admin from "./pages/Admin";
 import Cart from "./pages/Cart";
 import Favorites from "./pages/Favorites";
 import Checkout from "./pages/Checkout";
@@ -76,6 +78,8 @@ const App = () => (
         <Route path="/messages" element={<ProtectedRoute><AppLayout><Messages /></AppLayout></ProtectedRoute>} />
         <Route path="/uploads" element={<ProtectedRoute><AppLayout><Uploads /></AppLayout></ProtectedRoute>} />
         <Route path="/my-products" element={<ProtectedRoute><AppLayout><MyProducts /></AppLayout></ProtectedRoute>} />
+        <Route path="/product/edit/:id" element={<ProtectedRoute><AppLayout><ProductEdit /></AppLayout></ProtectedRoute>} />
+        <Route path="/product/:id" element={<ProtectedRoute><AppLayout><ProductDetails /></AppLayout></ProtectedRoute>} />
         <Route path="/profile" element={<ProtectedRoute><AppLayout><ProfileMenu /></AppLayout></ProtectedRoute>} />
         <Route path="/profile/personal-info" element={<ProtectedRoute><AppLayout><PersonalInfo /></AppLayout></ProtectedRoute>} />
         <Route path="/profile/deposit" element={<ProtectedRoute><AppLayout><Deposit /></AppLayout></ProtectedRoute>} />

@@ -9,6 +9,10 @@ const MyProducts = () => {
   const { products, isLoading } = useMyProducts();
   const navigate = useNavigate();
 
+  const handleProductClick = (productId: string) => {
+    navigate(`/product/edit/${productId}`);
+  };
+
   return (
     <div className="space-y-6">
       <h1 className="text-3xl font-bold">My Products</h1>
@@ -20,14 +24,15 @@ const MyProducts = () => {
           ))
         ) : products && products.length > 0 ? (
           products.map((product) => (
-            <ProductCard 
-              key={product.id}
-              id={product.id}
-              name={product.name}
-              price={product.price}
-              description={product.description || ''}
-              image={product.product_images?.[0]?.image_url}
-            />
+            <div key={product.id} onClick={() => handleProductClick(product.id)} className="cursor-pointer">
+              <ProductCard 
+                id={product.id}
+                name={product.name}
+                price={product.price}
+                description={product.description || ''}
+                image={product.product_images?.[0]?.image_url}
+              />
+            </div>
           ))
         ) : (
           <div className="col-span-full text-center py-12">

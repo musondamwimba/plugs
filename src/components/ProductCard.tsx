@@ -3,6 +3,7 @@ import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card"
 import { Heart, ShoppingCart } from "lucide-react";
 import { useCart } from "@/hooks/useCart";
 import { useFavorites } from "@/hooks/useFavorites";
+import { useNavigate } from "react-router-dom";
 
 interface ProductCardProps {
   id?: string;
@@ -15,11 +16,16 @@ interface ProductCardProps {
 const ProductCard = ({ id, name, price, image, description }: ProductCardProps) => {
   const { addToCart } = useCart();
   const { addFavorite, removeFavorite, favorites } = useFavorites();
+  const navigate = useNavigate();
   
   const isFavorite = favorites?.some((fav: any) => fav.product_id === id);
 
+  const handleViewDetails = () => {
+    if (id) navigate(`/product/${id}`);
+  };
+
   return (
-    <Card className="overflow-hidden hover:shadow-lg transition-shadow">
+    <Card className="overflow-hidden hover:shadow-lg transition-shadow cursor-pointer" onClick={handleViewDetails}>
       <div className="aspect-square bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center">
         {image ? (
           <img src={image} alt={name} className="w-full h-full object-cover" />
@@ -36,14 +42,17 @@ const ProductCard = ({ id, name, price, image, description }: ProductCardProps) 
       <CardContent className="p-4 pt-2">
         <div className="flex items-baseline gap-2">
           <span className="text-2xl font-bold text-primary">{price.toLocaleString()}</span>
-          <span className="text-sm text-muted-foreground">MMK</span>
+          <span className="text-sm text-muted-foreground">ZMK</span>
         </div>
       </CardContent>
       <CardFooter className="p-4 pt-0 gap-2">
         <Button 
           variant="default" 
           className="flex-1 gap-2"
-          onClick={() => id && addToCart(id)}
+          onClick={(e) => {
+            e.stopPropagation();
+            id && addToCart(id);
+          }}
         >
           <ShoppingCart className="w-4 h-4" />
           Add to Cart
@@ -52,7 +61,8 @@ const ProductCard = ({ id, name, price, image, description }: ProductCardProps) 
           size="icon"
           variant={isFavorite ? "default" : "outline"}
           className="transition-all hover:scale-110"
-          onClick={() => {
+          onClick={(e) => {
+            e.stopPropagation();
             if (id) {
               isFavorite ? removeFavorite(id) : addFavorite(id);
             }
