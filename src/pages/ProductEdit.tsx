@@ -41,6 +41,10 @@ const ProductEdit = () => {
     );
   }
 
+  if (!product) {
+    return <div className="text-center py-12">Product not found</div>;
+  }
+
   return (
     <div className="space-y-6">
       <div className="flex items-center gap-4">
@@ -51,17 +55,10 @@ const ProductEdit = () => {
       </div>
       <Card>
         <CardHeader>
-          <CardTitle>Edit Product</CardTitle>
+          <CardTitle>Edit Product Details</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="space-y-4">
-            <p className="text-muted-foreground">
-              Product ID: {product?.id}
-            </p>
-            <p className="text-sm text-muted-foreground">
-              Edit functionality coming soon. For now, you can view your product details here.
-            </p>
-          </div>
+          <ProductUploadForm existingProduct={product} />
         </CardContent>
       </Card>
     </div>

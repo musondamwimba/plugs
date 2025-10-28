@@ -66,7 +66,8 @@ const Map = () => {
     if (!product.location_lat || !product.location_lng) return false;
     
     // Filter by product type
-    if (productType !== "both" && product.product_type !== productType) return false;
+    if (productType === "good" && product.product_type !== "good") return false;
+    if (productType === "service" && product.product_type !== "service") return false;
     
     // Filter by search query
     if (searchQuery && !product.name.toLowerCase().includes(searchQuery.toLowerCase())) return false;
@@ -140,7 +141,7 @@ const Map = () => {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="both">Goods & Services</SelectItem>
-                    <SelectItem value="product">Goods Only</SelectItem>
+                    <SelectItem value="good">Goods Only</SelectItem>
                     <SelectItem value="service">Services Only</SelectItem>
                   </SelectContent>
                 </Select>

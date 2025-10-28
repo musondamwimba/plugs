@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -7,23 +7,31 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { Loader2 } from "lucide-react";
+import { Loader2, MapPin } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
+import LocationPicker from "./LocationPicker";
+import { useNavigate } from "react-router-dom";
 
-const ProductUploadForm = () => {
+interface ProductUploadFormProps {
+  existingProduct?: any;
+}
+
+const ProductUploadForm = ({ existingProduct }: ProductUploadFormProps) => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const navigate = useNavigate();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [images, setImages] = useState<File[]>([]);
   const [documents, setDocuments] = useState<File[]>([]);
   const [locations, setLocations] = useState<Array<{ lat: number; lng: number }>>([]);
   const [useProfilePic, setUseProfilePic] = useState(false);
   const [primaryImageIndex, setPrimaryImageIndex] = useState(0);
+  const [showLocationPicker, setShowLocationPicker] = useState(false);
   const [formData, setFormData] = useState({
     name: "",
     description: "",
     price: "",
-    product_type: "product",
+    product_type: "good",
     condition: "new",
     location_address: "",
     is_bid: false,
@@ -32,6 +40,31 @@ const ProductUploadForm = () => {
     cash_only: false,
     mobile_location: false,
   });
+
+  useEffect(() => {
+    if (existingProduct) {
+      setFormData({
+        name: existingProduct.name || "",
+        description: existingProduct.description || "",
+        price: existingProduct.price?.toString() || "",
+        product_type: existingProduct.product_type || "good",
+        condition: existingProduct.condition || "new",
+        location_address: existingProduct.location_address || "",
+        is_bid: existingProduct.is_bid || false,
+        starting_bid: existingProduct.starting_bid?.toString() || "",
+        bid_end_time: existingProduct.bid_end_time || "",
+        cash_only: existingProduct.cash_only || false,
+        mobile_location: existingProduct.mobile_location || false,
+      });
+      setUseProfilePic(existingProduct.use_profile_picture || false);
+      if (existingProduct.location_lat && existingProduct.location_lng) {
+        setLocations([{
+          lat: Number(existingProduct.location_lat),
+          lng: Number(existingProduct.location_lng)
+        }]);
+      }
+    }
+  }, [existingProduct]);
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
@@ -146,20 +179,49 @@ const ProductUploadForm = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Validation
+    if (!formData.name.trim()) {
+      toast({
+        title: "Missing product name",
+        description: "Please enter a product name.",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    if (!formData.price || parseFloat(formData.price) <= 0) {
+      toast({
+        title: "Invalid price",
+        description: "Please enter a valid price greater than 0.",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    if (locations.length === 0) {
+      toast({
+        title: "Location required",
+        description: "Please add at least one location for your product.",
+        variant: "destructive",
+      });
+      return;
+    }
+    
     setIsSubmitting(true);
 
     try {
       const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error('Not authenticated');
+      if (!user) throw new Error('You must be logged in to upload products');
 
       const productData: any = {
         vendor_id: user.id,
-        name: formData.name,
-        description: formData.description,
+        name: formData.name.trim(),
+        description: formData.description?.trim() || null,
         price: parseFloat(formData.price),
         product_type: formData.product_type,
         condition: formData.condition,
-        location_address: formData.location_address,
+        location_address: formData.location_address?.trim() || null,
         cash_only: formData.cash_only,
         is_bid: formData.is_bid,
         mobile_location: formData.mobile_location,
@@ -169,17 +231,49 @@ const ProductUploadForm = () => {
       };
 
       if (formData.is_bid) {
+        if (!formData.starting_bid || parseFloat(formData.starting_bid) <= 0) {
+          throw new Error('Please enter a valid starting bid amount');
+        }
+        if (!formData.bid_end_time) {
+          throw new Error('Please select an end time for the bid');
+        }
         productData.starting_bid = parseFloat(formData.starting_bid);
         productData.bid_end_time = formData.bid_end_time;
       }
 
-      const { data: product, error: productError } = await supabase
-        .from('products')
-        .insert(productData)
-        .select()
-        .single();
+      let product;
+      if (existingProduct) {
+        // Update existing product
+        const { data, error: productError } = await supabase
+          .from('products')
+          .update(productData)
+          .eq('id', existingProduct.id)
+          .select()
+          .single();
+        
+        if (productError) throw productError;
+        product = data;
+        
+        toast({
+          title: "Product updated",
+          description: "Your product has been updated successfully.",
+        });
+      } else {
+        // Create new product
+        const { data, error: productError } = await supabase
+          .from('products')
+          .insert(productData)
+          .select()
+          .single();
 
-      if (productError) throw productError;
+        if (productError) throw productError;
+        product = data;
+        
+        toast({
+          title: "Product uploaded",
+          description: "Your product has been listed successfully.",
+        });
+      }
 
       if (images.length > 0) {
         await uploadImages(product.id);
@@ -190,35 +284,35 @@ const ProductUploadForm = () => {
       }
 
       queryClient.invalidateQueries({ queryKey: ['my-products'] });
+      queryClient.invalidateQueries({ queryKey: ['products'] });
       
-      toast({
-        title: "Product uploaded",
-        description: "Your product has been listed successfully.",
-      });
-
-      // Reset form
-      setFormData({
-        name: "",
-        description: "",
-        price: "",
-        product_type: "product",
-        condition: "new",
-        location_address: "",
-        is_bid: false,
-        starting_bid: "",
-        bid_end_time: "",
-        cash_only: false,
-        mobile_location: false,
-      });
-      setImages([]);
-      setDocuments([]);
-      setLocations([]);
-      setUseProfilePic(false);
-      setPrimaryImageIndex(0);
+      if (existingProduct) {
+        navigate('/my-products');
+      } else {
+        // Reset form for new product
+        setFormData({
+          name: "",
+          description: "",
+          price: "",
+          product_type: "good",
+          condition: "new",
+          location_address: "",
+          is_bid: false,
+          starting_bid: "",
+          bid_end_time: "",
+          cash_only: false,
+          mobile_location: false,
+        });
+        setImages([]);
+        setDocuments([]);
+        setLocations([]);
+        setUseProfilePic(false);
+        setPrimaryImageIndex(0);
+      }
     } catch (error: any) {
       toast({
-        title: "Error",
-        description: error.message,
+        title: "Error uploading product",
+        description: error.message || "Something went wrong. Please try again.",
         variant: "destructive",
       });
     } finally {
@@ -249,11 +343,12 @@ const ProductUploadForm = () => {
       </div>
 
       <div>
-        <Label htmlFor="price">Price (MMK)</Label>
+        <Label htmlFor="price">Price (ZMK)</Label>
         <Input
           id="price"
           type="number"
           step="0.01"
+          min="0"
           value={formData.price}
           onChange={(e) => setFormData({ ...formData, price: e.target.value })}
           required
@@ -270,8 +365,8 @@ const ProductUploadForm = () => {
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="product">Product</SelectItem>
-            <SelectItem value="service">Service</SelectItem>
+            <SelectItem value="good">Goods</SelectItem>
+            <SelectItem value="service">Services</SelectItem>
           </SelectContent>
         </Select>
       </div>
@@ -304,9 +399,14 @@ const ProductUploadForm = () => {
 
       <div className="space-y-3">
         <Label>Location on Map</Label>
-        <div className="flex gap-2">
-          <Button type="button" onClick={handleAddLocation}>
+        <div className="flex gap-2 flex-wrap">
+          <Button type="button" onClick={handleAddLocation} variant="outline">
+            <MapPin className="w-4 h-4 mr-2" />
             Add Current Location
+          </Button>
+          <Button type="button" onClick={() => setShowLocationPicker(!showLocationPicker)} variant="outline">
+            <MapPin className="w-4 h-4 mr-2" />
+            {showLocationPicker ? "Hide Map" : "Pin Location on Map"}
           </Button>
           {formData.product_type === "service" && (
             <div className="flex items-center space-x-2">
@@ -319,6 +419,23 @@ const ProductUploadForm = () => {
             </div>
           )}
         </div>
+        
+        {showLocationPicker && (
+          <div className="mt-4">
+            <p className="text-sm text-muted-foreground mb-2">Click on the map to pin your location</p>
+            <LocationPicker
+              onLocationSelect={(lat, lng) => {
+                setLocations([{ lat, lng }]);
+                toast({
+                  title: "Location selected",
+                  description: `Location set to: ${lat.toFixed(4)}, ${lng.toFixed(4)}`,
+                });
+              }}
+              initialLocation={locations[0]}
+            />
+          </div>
+        )}
+        
         {locations.length > 0 && (
           <div className="space-y-2">
             {locations.map((loc, index) => (
@@ -350,13 +467,15 @@ const ProductUploadForm = () => {
       {formData.is_bid && (
         <>
           <div>
-            <Label htmlFor="starting_bid">Starting Bid (MMK)</Label>
+            <Label htmlFor="starting_bid">Starting Bid (ZMK)</Label>
             <Input
               id="starting_bid"
               type="number"
               step="0.01"
+              min="0"
               value={formData.starting_bid}
               onChange={(e) => setFormData({ ...formData, starting_bid: e.target.value })}
+              required={formData.is_bid}
             />
           </div>
 
@@ -367,6 +486,7 @@ const ProductUploadForm = () => {
               type="datetime-local"
               value={formData.bid_end_time}
               onChange={(e) => setFormData({ ...formData, bid_end_time: e.target.value })}
+              required={formData.is_bid}
             />
           </div>
         </>
@@ -450,12 +570,23 @@ const ProductUploadForm = () => {
         {isSubmitting ? (
           <>
             <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-            Uploading...
+            {existingProduct ? "Updating..." : "Uploading..."}
           </>
         ) : (
-          "Upload Product"
+          existingProduct ? "Update Product" : "Upload Product"
         )}
       </Button>
+      
+      {existingProduct && (
+        <Button 
+          type="button" 
+          variant="outline" 
+          onClick={() => navigate('/my-products')} 
+          className="w-full"
+        >
+          Cancel
+        </Button>
+      )}
     </form>
   );
 };

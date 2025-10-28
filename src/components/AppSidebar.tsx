@@ -3,16 +3,17 @@ import { Link, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
+import { useRoles } from "@/hooks/useRoles";
 
 interface AppSidebarProps {
   isOpen: boolean;
   onClose: () => void;
-  isAdmin?: boolean;
 }
 
-const AppSidebar = ({ isOpen, onClose, isAdmin = false }: AppSidebarProps) => {
+const AppSidebar = ({ isOpen, onClose }: AppSidebarProps) => {
   const location = useLocation();
   const { signOut } = useAuth();
+  const { isAdmin } = useRoles();
   
   const navItems = [
     { path: "/", label: "Home", icon: Home, color: "text-icon-home" },

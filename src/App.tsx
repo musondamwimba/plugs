@@ -29,16 +29,35 @@ import Favorites from "./pages/Favorites";
 import Checkout from "./pages/Checkout";
 import NotFound from "./pages/NotFound";
 
+const AdminGuard = ({ children }: { children: React.ReactNode }) => {
+  const { isAdmin, isLoading } = useRoles();
+
+  if (isLoading) {
+    return <div className="flex items-center justify-center h-screen">Loading...</div>;
+  }
+
+  if (!isAdmin) {
+    return (
+      <div className="flex items-center justify-center h-screen">
+        <div className="text-center">
+          <h1 className="text-2xl font-bold mb-2">Access Denied</h1>
+          <p className="text-muted-foreground">You do not have permission to access this page.</p>
+        </div>
+      </div>
+    );
+  }
+
+  return <>{children}</>;
+};
+
 const AppLayout = ({ children }: { children: React.ReactNode }) => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const { isAdmin } = useRoles();
 
   return (
     <div className="min-h-screen bg-background">
       <AppSidebar 
         isOpen={sidebarOpen} 
-        onClose={() => setSidebarOpen(false)} 
-        isAdmin={isAdmin}
+        onClose={() => setSidebarOpen(false)}
       />
       
       {/* Main Content */}
@@ -86,7 +105,15 @@ const App = () => (
         <Route path="/profile/withdraw" element={<ProtectedRoute><AppLayout><Withdraw /></AppLayout></ProtectedRoute>} />
         <Route path="/profile/transactions" element={<ProtectedRoute><AppLayout><TransactionHistory /></AppLayout></ProtectedRoute>} />
         <Route path="/profile/subscriptions" element={<ProtectedRoute><AppLayout><Subscriptions /></AppLayout></ProtectedRoute>} />
-        <Route path="/admin" element={<ProtectedRoute><AppLayout><Admin /></AppLayout></ProtectedRoute>} />
+        <Route path="/admin" element={
+          <ProtectedRoute>
+            <AppLayout>
+              <AdminGuard>
+                <Admin />
+              </AdminGuard>
+            </AppLayout>
+          </ProtectedRoute>
+        } />
         <Route path="/cart" element={<ProtectedRoute><AppLayout><Cart /></AppLayout></ProtectedRoute>} />
         <Route path="/checkout" element={<ProtectedRoute><AppLayout><Checkout /></AppLayout></ProtectedRoute>} />
         <Route path="/favorites" element={<ProtectedRoute><AppLayout><Favorites /></AppLayout></ProtectedRoute>} />
