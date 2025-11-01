@@ -14,6 +14,33 @@ export type Database = {
   }
   public: {
     Tables: {
+      admin_actions: {
+        Row: {
+          action_type: string
+          admin_id: string
+          created_at: string | null
+          details: Json | null
+          id: string
+          target_user_id: string | null
+        }
+        Insert: {
+          action_type: string
+          admin_id: string
+          created_at?: string | null
+          details?: Json | null
+          id?: string
+          target_user_id?: string | null
+        }
+        Update: {
+          action_type?: string
+          admin_id?: string
+          created_at?: string | null
+          details?: Json | null
+          id?: string
+          target_user_id?: string | null
+        }
+        Relationships: []
+      }
       bids: {
         Row: {
           amount: number
@@ -412,6 +439,42 @@ export type Database = {
           },
         ]
       }
+      theme_settings: {
+        Row: {
+          accent_color: string
+          background_color: string
+          border_radius: string
+          created_at: string | null
+          foreground_color: string
+          id: string
+          primary_color: string
+          updated_at: string | null
+          updated_by: string | null
+        }
+        Insert: {
+          accent_color?: string
+          background_color?: string
+          border_radius?: string
+          created_at?: string | null
+          foreground_color?: string
+          id?: string
+          primary_color?: string
+          updated_at?: string | null
+          updated_by?: string | null
+        }
+        Update: {
+          accent_color?: string
+          background_color?: string
+          border_radius?: string
+          created_at?: string | null
+          foreground_color?: string
+          id?: string
+          primary_color?: string
+          updated_at?: string | null
+          updated_by?: string | null
+        }
+        Relationships: []
+      }
       transactions: {
         Row: {
           admin_fee: number | null
@@ -441,6 +504,45 @@ export type Database = {
           id?: string
           invoice_url?: string | null
           type?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      user_moderation: {
+        Row: {
+          created_at: string | null
+          expires_at: string | null
+          fine_amount: number | null
+          id: string
+          moderated_at: string | null
+          moderated_by: string | null
+          reason: string | null
+          status: Database["public"]["Enums"]["user_status"]
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          expires_at?: string | null
+          fine_amount?: number | null
+          id?: string
+          moderated_at?: string | null
+          moderated_by?: string | null
+          reason?: string | null
+          status?: Database["public"]["Enums"]["user_status"]
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          expires_at?: string | null
+          fine_amount?: number | null
+          id?: string
+          moderated_at?: string | null
+          moderated_by?: string | null
+          reason?: string | null
+          status?: Database["public"]["Enums"]["user_status"]
+          updated_at?: string | null
           user_id?: string
         }
         Relationships: []
@@ -519,6 +621,7 @@ export type Database = {
       app_role: "admin" | "vendor" | "buyer"
       product_condition: "new" | "like_new" | "good" | "fair" | "poor"
       product_type: "good" | "service"
+      user_status: "active" | "suspended" | "banned" | "blocked"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -649,6 +752,7 @@ export const Constants = {
       app_role: ["admin", "vendor", "buyer"],
       product_condition: ["new", "like_new", "good", "fair", "poor"],
       product_type: ["good", "service"],
+      user_status: ["active", "suspended", "banned", "blocked"],
     },
   },
 } as const

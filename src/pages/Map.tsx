@@ -1,10 +1,11 @@
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { MapContainer, TileLayer, Marker, Popup, Circle, useMap } from "react-leaflet";
-import { Icon, LatLng } from "leaflet";
+import { Icon, LatLng, divIcon } from "leaflet";
 import "leaflet/dist/leaflet.css";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Search, SlidersHorizontal } from "lucide-react";
+import { Search, SlidersHorizontal, ShoppingCart, Heart } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Slider } from "@/components/ui/slider";
@@ -32,18 +33,24 @@ function MapController({ center }: { center: LatLng }) {
 }
 
 const Map = () => {
+  const navigate = useNavigate();
   const [userLocation, setUserLocation] = useState<LatLng | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [showFilters, setShowFilters] = useState(false);
   const [searchRadius, setSearchRadius] = useState<number>(10);
   const [productType, setProductType] = useState<string>("both");
+  const [offeringType, setOfferingType] = useState<string>("all");
   const [searchWholeZambia, setSearchWholeZambia] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState<any>(null);
   
   const { products } = useProducts();
   const { addToCart } = useCart();
-  const { addFavorite } = useFavorites();
+  const { favorites, addFavorite } = useFavorites();
   const { toast } = useToast();
+
+  const isFavorite = (productId: string) => {
+    return favorites?.some(fav => fav.product_id === productId) || false;
+  };
 
   useEffect(() => {
     // Get user's current location
@@ -65,6 +72,10 @@ const Map = () => {
   const filteredProducts = products?.filter(product => {
     if (!product.location_lat || !product.location_lng) return false;
     
+    // Filter by offering type (goods vs services)
+    if (offeringType === "goods" && product.product_type === "service") return false;
+    if (offeringType === "services" && product.product_type !== "service") return false;
+    
     // Filter by product type
     if (productType === "good" && product.product_type !== "good") return false;
     if (productType === "service" && product.product_type !== "service") return false;
@@ -82,11 +93,24 @@ const Map = () => {
     return true;
   }) || [];
 
-  const handleAddToCart = (productId: string) => {
-    addToCart(productId);
+  const getMobileIcon = () => {
+    return divIcon({
+      html: `<div style="background: hsl(var(--accent)); color: white; width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; border: 2px solid white; box-shadow: 0 2px 8px rgba(0,0,0,0.3);">M</div>`,
+      className: 'custom-mobile-icon',
+      iconSize: [32, 32],
+      iconAnchor: [16, 32],
+    });
   };
 
-  const handleAddToFavorites = (productId: string) => {
+  const handleAddToCart = (productId: string) => {
+    addToCart(productId);
+    toast({
+      title: "Added to cart",
+      description: "Product has been added to your cart.",
+    });
+  };
+
+  const handleToggleFavorite = (productId: string) => {
     addFavorite(productId);
   };
 
@@ -122,6 +146,20 @@ const Map = () => {
 
           {showFilters && (
             <div className="space-y-4 pt-4 border-t">
+              <div className="space-y-2">
+                <Label>Offering Type</Label>
+                <Select value={offeringType} onValueChange={setOfferingType}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All</SelectItem>
+                    <SelectItem value="goods">Goods Only</SelectItem>
+                    <SelectItem value="services">Services Only</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
               <div className="space-y-2">
                 <Label>Search Radius: {searchRadius} km</Label>
                 <Slider
@@ -196,6 +234,7 @@ const Map = () => {
           <Marker
             key={product.id}
             position={[Number(product.location_lat), Number(product.location_lng)]}
+            icon={product.mobile_location ? getMobileIcon() : undefined}
             eventHandlers={{
               click: () => setSelectedProduct(product),
             }}
@@ -204,6 +243,7 @@ const Map = () => {
               <div className="w-48">
                 <h3 className="font-bold">{product.name}</h3>
                 <p className="text-sm text-muted-foreground">ZMK {product.price}</p>
+                {product.mobile_location && <p className="text-xs text-accent font-semibold mt-1">Mobile Service</p>}
               </div>
             </Popup>
           </Marker>
@@ -224,26 +264,31 @@ const Map = () => {
               )}
               <h3 className="font-bold text-base sm:text-lg">{selectedProduct.name}</h3>
               <p className="text-muted-foreground text-sm sm:text-base mb-2 sm:mb-3">ZMK {selectedProduct.price}</p>
+              {selectedProduct.mobile_location && (
+                <p className="text-xs sm:text-sm text-accent font-semibold mb-2">📍 Mobile Service</p>
+              )}
               <div className="flex flex-col sm:flex-row gap-2">
                 <Button
+                  onClick={() => navigate(`/product/${selectedProduct.id}`)}
+                  className="flex-1 text-sm sm:text-base h-9 sm:h-10"
+                >
+                  View More
+                </Button>
+                <Button
+                  variant="outline"
                   onClick={() => handleAddToCart(selectedProduct.id)}
                   className="flex-1 text-sm sm:text-base h-9 sm:h-10"
                 >
-                  Add to Cart
+                  <ShoppingCart className="w-4 h-4 mr-1" />
+                  Cart
                 </Button>
                 <Button
                   variant="outline"
-                  onClick={() => handleAddToFavorites(selectedProduct.id)}
+                  onClick={() => handleToggleFavorite(selectedProduct.id)}
                   className="text-sm sm:text-base h-9 sm:h-10"
                 >
-                  Favorite
-                </Button>
-                <Button
-                  variant="outline"
-                  onClick={() => window.open(`/products/${selectedProduct.id}`, '_blank')}
-                  className="text-sm sm:text-base h-9 sm:h-10"
-                >
-                  View Details
+                  <Heart className={`w-4 h-4 mr-1 ${isFavorite(selectedProduct.id) ? 'fill-current' : ''}`} />
+                  {isFavorite(selectedProduct.id) ? 'Saved' : 'Save'}
                 </Button>
               </div>
               <Button
