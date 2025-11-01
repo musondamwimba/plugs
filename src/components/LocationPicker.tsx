@@ -1,9 +1,17 @@
 import { useState, useEffect } from "react";
 import { MapContainer, TileLayer, Marker, useMapEvents } from "react-leaflet";
-import { LatLng } from "leaflet";
+import { LatLng, Icon } from "leaflet";
 import "leaflet/dist/leaflet.css";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+
+// Fix for default marker icon
+delete (Icon.Default.prototype as any)._getIconUrl;
+Icon.Default.mergeOptions({
+  iconRetinaUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon-2x.png",
+  iconUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon.png",
+  shadowUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png",
+});
 
 interface LocationPickerProps {
   onLocationSelect: (lat: number, lng: number) => void;
@@ -42,15 +50,18 @@ const LocationPicker = ({ onLocationSelect, initialLocation }: LocationPickerPro
   }, [initialLocation]);
 
   return (
-    <Card className="w-full h-[400px] overflow-hidden">
+    <Card className="w-full h-[400px] sm:h-[450px] md:h-[500px] overflow-hidden">
       <MapContainer
         center={center}
         zoom={13}
+        scrollWheelZoom={true}
         style={{ height: "100%", width: "100%" }}
+        className="z-0"
       >
         <TileLayer
-          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+          maxZoom={19}
         />
         <LocationMarker onLocationSelect={onLocationSelect} />
       </MapContainer>

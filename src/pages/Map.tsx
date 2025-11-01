@@ -18,9 +18,9 @@ import { useToast } from "@/hooks/use-toast";
 // Fix for default marker icon
 delete (Icon.Default.prototype as any)._getIconUrl;
 Icon.Default.mergeOptions({
-  iconRetinaUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png",
-  iconUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png",
-  shadowUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png",
+  iconRetinaUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon-2x.png",
+  iconUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon.png",
+  shadowUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png",
 });
 
 function MapController({ center }: { center: LatLng }) {
@@ -95,27 +95,28 @@ const Map = () => {
   }
 
   return (
-    <div className="relative h-screen w-full">
+    <div className="relative h-[calc(100vh-4rem)] md:h-screen w-full">
       {/* Search bar and filters */}
-      <div className="absolute top-4 left-1/2 -translate-x-1/2 z-[1000] w-full max-w-2xl px-4">
-        <div className="bg-background rounded-lg shadow-lg p-4 space-y-4">
+      <div className="absolute top-2 sm:top-4 left-1/2 -translate-x-1/2 z-[1000] w-full max-w-2xl px-2 sm:px-4">
+        <div className="bg-background rounded-lg shadow-lg p-2 sm:p-4 space-y-3 sm:space-y-4">
           <div className="relative flex gap-2">
             <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+              <Search className="absolute left-2 sm:left-3 top-1/2 -translate-y-1/2 w-4 h-4 sm:w-5 sm:h-5 text-muted-foreground" />
               <Input
                 type="text"
                 placeholder="Search on map..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-10"
+                className="pl-8 sm:pl-10 text-sm sm:text-base h-9 sm:h-10"
               />
             </div>
             <Button
               variant="outline"
               size="icon"
               onClick={() => setShowFilters(!showFilters)}
+              className="h-9 w-9 sm:h-10 sm:w-10"
             >
-              <SlidersHorizontal className="w-4 h-4" />
+              <SlidersHorizontal className="w-3 h-3 sm:w-4 sm:h-4" />
             </Button>
           </div>
 
@@ -166,11 +167,14 @@ const Map = () => {
         zoom={13}
         style={{ height: "100%", width: "100%" }}
         zoomControl={true}
+        scrollWheelZoom={true}
+        className="z-0"
       >
         <MapController center={userLocation} />
         <TileLayer
-          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+          maxZoom={19}
         />
         
         {/* User location marker */}
@@ -208,34 +212,36 @@ const Map = () => {
 
       {/* Selected product card */}
       {selectedProduct && (
-        <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-[1000] w-full max-w-md px-4">
+        <div className="absolute bottom-2 sm:bottom-4 left-1/2 -translate-x-1/2 z-[1000] w-full max-w-md px-2 sm:px-4">
           <Card>
-            <CardContent className="p-4">
+            <CardContent className="p-3 sm:p-4">
               {selectedProduct.product_images?.[0] && (
                 <img
                   src={selectedProduct.product_images[0].image_url}
                   alt={selectedProduct.name}
-                  className="w-full h-40 object-cover rounded-lg mb-3"
+                  className="w-full h-32 sm:h-40 object-cover rounded-lg mb-2 sm:mb-3"
                 />
               )}
-              <h3 className="font-bold text-lg">{selectedProduct.name}</h3>
-              <p className="text-muted-foreground mb-3">ZMK {selectedProduct.price}</p>
-              <div className="flex gap-2">
+              <h3 className="font-bold text-base sm:text-lg">{selectedProduct.name}</h3>
+              <p className="text-muted-foreground text-sm sm:text-base mb-2 sm:mb-3">ZMK {selectedProduct.price}</p>
+              <div className="flex flex-col sm:flex-row gap-2">
                 <Button
                   onClick={() => handleAddToCart(selectedProduct.id)}
-                  className="flex-1"
+                  className="flex-1 text-sm sm:text-base h-9 sm:h-10"
                 >
                   Add to Cart
                 </Button>
                 <Button
                   variant="outline"
                   onClick={() => handleAddToFavorites(selectedProduct.id)}
+                  className="text-sm sm:text-base h-9 sm:h-10"
                 >
                   Favorite
                 </Button>
                 <Button
                   variant="outline"
                   onClick={() => window.open(`/products/${selectedProduct.id}`, '_blank')}
+                  className="text-sm sm:text-base h-9 sm:h-10"
                 >
                   View Details
                 </Button>
