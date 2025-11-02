@@ -39,6 +39,14 @@ export function useBids(productId?: string) {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('Not authenticated');
 
+      // Get current highest bid
+      const { data: existingBids } = await supabase
+        .from('bids')
+        .select('bidder_id, amount')
+        .eq('product_id', productId)
+        .order('amount', { ascending: false })
+        .limit(1);
+
       const { data, error } = await supabase
         .from('bids')
         .insert({
@@ -50,6 +58,21 @@ export function useBids(productId?: string) {
         .single();
 
       if (error) throw error;
+
+      // Notify previous highest bidder they've been outbid
+      if (existingBids && existingBids.length > 0) {
+        const previousHighest = existingBids[0];
+        if (previousHighest.bidder_id !== user.id) {
+          await supabase.from('notifications').insert({
+            user_id: previousHighest.bidder_id,
+            product_id: productId,
+            type: 'outbid',
+            title: 'You\'ve been outbid!',
+            message: `Your bid of ${previousHighest.amount} ZMK has been outbid. Place a higher bid to win!`,
+          });
+        }
+      }
+
       return data;
     },
     onSuccess: () => {

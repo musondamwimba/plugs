@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { MapContainer, TileLayer, Marker, Popup, Circle, useMap } from "react-leaflet";
 import { Icon, LatLng, divIcon } from "leaflet";
@@ -52,6 +52,16 @@ const Map = () => {
     return favorites?.some(fav => fav.product_id === productId) || false;
   };
 
+  // Memoize the mobile icon to prevent recreation on every render
+  const mobileIcon = useMemo(() => {
+    return divIcon({
+      html: `<div style="background: hsl(var(--accent)); color: white; width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; border: 2px solid white; box-shadow: 0 2px 8px rgba(0,0,0,0.3);">M</div>`,
+      className: 'custom-mobile-icon',
+      iconSize: [32, 32],
+      iconAnchor: [16, 32],
+    });
+  }, []);
+
   useEffect(() => {
     // Get user's current location
     if (navigator.geolocation) {
@@ -92,15 +102,6 @@ const Map = () => {
     
     return true;
   }) || [];
-
-  const getMobileIcon = () => {
-    return divIcon({
-      html: `<div style="background: hsl(var(--accent)); color: white; width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; border: 2px solid white; box-shadow: 0 2px 8px rgba(0,0,0,0.3);">M</div>`,
-      className: 'custom-mobile-icon',
-      iconSize: [32, 32],
-      iconAnchor: [16, 32],
-    });
-  };
 
   const handleAddToCart = (productId: string) => {
     addToCart(productId);
@@ -234,7 +235,7 @@ const Map = () => {
           <Marker
             key={product.id}
             position={[Number(product.location_lat), Number(product.location_lng)]}
-            icon={product.mobile_location ? getMobileIcon() : undefined}
+            icon={product.mobile_location ? mobileIcon : undefined}
             eventHandlers={{
               click: () => setSelectedProduct(product),
             }}

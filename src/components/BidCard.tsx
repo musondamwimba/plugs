@@ -69,8 +69,8 @@ const BidCard = ({ productId, productName, startingBid, currentHighestBid, bidEn
             <h4 className="font-semibold">Recent Bids</h4>
             {bids.slice(0, 5).map((bid: any) => (
               <div key={bid.id} className="flex justify-between text-sm">
-                <span>{bid.bidder?.profiles?.full_name || "Anonymous"}</span>
-                <span className="font-semibold">{bid.amount.toLocaleString()} MMK</span>
+                <span>Anonymous Bidder</span>
+                <span className="font-semibold">{bid.amount.toLocaleString()} ZMK</span>
               </div>
             ))}
           </div>

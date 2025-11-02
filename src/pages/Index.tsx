@@ -37,6 +37,19 @@ const Index = () => {
 
   const showResults = searchQuery.length > 0;
 
+  // Featured products algorithm: mix recent, random, and user's own products
+  const getFeaturedProducts = () => {
+    if (!products || products.length === 0) return [];
+    
+    // Shuffle products for variety
+    const shuffled = [...products].sort(() => Math.random() - 0.5);
+    
+    // Take top 12 for featured section
+    return shuffled.slice(0, 12);
+  };
+
+  const featuredProducts = !showResults ? getFeaturedProducts() : filteredProducts;
+
   return (
     <div className="space-y-8">
       {/* Welcome Title */}
@@ -100,8 +113,8 @@ const Index = () => {
             Array.from({ length: 6 }).map((_, i) => (
               <Skeleton key={i} className="h-80 rounded-lg" />
             ))
-          ) : filteredProducts && filteredProducts.length > 0 ? (
-            filteredProducts.map((product) => (
+          ) : featuredProducts && featuredProducts.length > 0 ? (
+            featuredProducts.map((product) => (
               <ProductCard 
                 key={product.id}
                 id={product.id}

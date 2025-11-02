@@ -190,7 +190,8 @@ const ProductUploadForm = ({ existingProduct }: ProductUploadFormProps) => {
       return;
     }
     
-    if (!formData.price || parseFloat(formData.price) <= 0) {
+    // Only validate price if bidding is not enabled
+    if (!formData.is_bid && (!formData.price || parseFloat(formData.price) <= 0)) {
       toast({
         title: "Invalid price",
         description: "Please enter a valid price greater than 0.",
@@ -218,7 +219,7 @@ const ProductUploadForm = ({ existingProduct }: ProductUploadFormProps) => {
         vendor_id: user.id,
         name: formData.name.trim(),
         description: formData.description?.trim() || null,
-        price: parseFloat(formData.price),
+        price: formData.is_bid ? 0 : parseFloat(formData.price),
         product_type: formData.product_type,
         condition: formData.condition,
         location_address: formData.location_address?.trim() || null,
@@ -342,18 +343,20 @@ const ProductUploadForm = ({ existingProduct }: ProductUploadFormProps) => {
         />
       </div>
 
-      <div>
-        <Label htmlFor="price">Price (ZMK)</Label>
-        <Input
-          id="price"
-          type="number"
-          step="0.01"
-          min="0"
-          value={formData.price}
-          onChange={(e) => setFormData({ ...formData, price: e.target.value })}
-          required
-        />
-      </div>
+      {!formData.is_bid && (
+        <div>
+          <Label htmlFor="price">Price (ZMK)</Label>
+          <Input
+            id="price"
+            type="number"
+            step="0.01"
+            min="0"
+            value={formData.price}
+            onChange={(e) => setFormData({ ...formData, price: e.target.value })}
+            required
+          />
+        </div>
+      )}
 
       <div>
         <Label htmlFor="product_type">Product Type</Label>
@@ -508,45 +511,44 @@ const ProductUploadForm = ({ existingProduct }: ProductUploadFormProps) => {
             checked={useProfilePic}
             onCheckedChange={setUseProfilePic}
           />
-          <Label htmlFor="use_profile_pic">Use Profile Picture</Label>
+          <Label htmlFor="use_profile_pic">Use Profile Picture on Card</Label>
         </div>
+        {useProfilePic && (
+          <p className="text-sm text-muted-foreground">Your profile picture will appear on the product card</p>
+        )}
 
-        {!useProfilePic && (
-          <>
-            <Label htmlFor="images">Product Images</Label>
-            <Input
-              id="images"
-              type="file"
-              accept="image/*"
-              multiple
-              onChange={handleImageChange}
-            />
-            {images.length > 0 && (
-              <div className="space-y-2 mt-2">
-                <p className="text-sm text-muted-foreground">
-                  {images.length} image(s) selected
-                </p>
-                <div>
-                  <Label>Select Primary Image</Label>
-                  <Select
-                    value={primaryImageIndex.toString()}
-                    onValueChange={(value) => setPrimaryImageIndex(parseInt(value))}
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {images.map((_, index) => (
-                        <SelectItem key={index} value={index.toString()}>
-                          Image {index + 1}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-            )}
-          </>
+        <Label htmlFor="images">Product Images</Label>
+        <Input
+          id="images"
+          type="file"
+          accept="image/*"
+          multiple
+          onChange={handleImageChange}
+        />
+        {images.length > 0 && (
+          <div className="space-y-2 mt-2">
+            <p className="text-sm text-muted-foreground">
+              {images.length} image(s) selected
+            </p>
+            <div>
+              <Label>Select Primary Image</Label>
+              <Select
+                value={primaryImageIndex.toString()}
+                onValueChange={(value) => setPrimaryImageIndex(parseInt(value))}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {images.map((_, index) => (
+                    <SelectItem key={index} value={index.toString()}>
+                      Image {index + 1}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
         )}
       </div>
 
