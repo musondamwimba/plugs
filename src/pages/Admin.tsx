@@ -7,15 +7,14 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { useUserManagement } from "@/hooks/useUserManagement";
-import { useThemeSettings } from "@/hooks/useThemeSettings";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
+import { ThemeControl } from "@/components/ThemeControl";
 
 const Admin = () => {
   const { toast } = useToast();
   const { users, isLoading: usersLoading, moderateUser } = useUserManagement();
-  const { theme, updateTheme } = useThemeSettings();
   
   const [depositFeeType, setDepositFeeType] = useState<'percentage' | 'fixed'>('percentage');
   const [depositFeeValue, setDepositFeeValue] = useState('5');
@@ -24,17 +23,9 @@ const Admin = () => {
   const [subscriptionFee, setSubscriptionFee] = useState('50');
   
   const [selectedUser, setSelectedUser] = useState<any>(null);
-  const [moderationAction, setModerationAction] = useState<string>('');
+  const [moderationAction, setModerationAction] = useState<'active' | 'suspended' | 'banned' | 'blocked'>('active');
   const [moderationReason, setModerationReason] = useState('');
   const [fineAmount, setFineAmount] = useState('');
-  
-  const [themeColors, setThemeColors] = useState({
-    primary: theme?.primary_color || '217 91% 60%',
-    accent: theme?.accent_color || '262 83% 58%',
-    background: theme?.background_color || '0 0% 100%',
-    foreground: theme?.foreground_color || '222 47% 11%',
-    borderRadius: theme?.border_radius || '0.75rem',
-  });
 
   const stats = [
     { title: "Total Users", value: users?.length || 0, icon: Users, color: "text-blue-600" },
@@ -60,19 +51,9 @@ const Admin = () => {
     });
     
     setSelectedUser(null);
-    setModerationAction('');
+    setModerationAction('active');
     setModerationReason('');
     setFineAmount('');
-  };
-
-  const handleSaveTheme = () => {
-    updateTheme({
-      primary_color: themeColors.primary,
-      accent_color: themeColors.accent,
-      background_color: themeColors.background,
-      foreground_color: themeColors.foreground,
-      border_radius: themeColors.borderRadius,
-    });
   };
 
   const getStatusBadge = (status: string) => {
@@ -239,7 +220,10 @@ const Admin = () => {
                             <div className="space-y-4 py-4">
                               <div className="space-y-2">
                                 <Label>Action</Label>
-                                <Select value={moderationAction} onValueChange={setModerationAction}>
+                                <Select 
+                                  value={moderationAction} 
+                                  onValueChange={(value) => setModerationAction(value as 'active' | 'suspended' | 'banned' | 'blocked')}
+                                >
                                   <SelectTrigger>
                                     <SelectValue placeholder="Select action" />
                                   </SelectTrigger>
@@ -303,62 +287,7 @@ const Admin = () => {
         </TabsContent>
 
         <TabsContent value="theme" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>Theme Control</CardTitle>
-              <CardDescription>Customize the app's appearance for all users</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="space-y-2">
-                <Label>Primary Color (HSL)</Label>
-                <Input
-                  value={themeColors.primary}
-                  onChange={(e) => setThemeColors({ ...themeColors, primary: e.target.value })}
-                  placeholder="217 91% 60%"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label>Accent Color (HSL)</Label>
-                <Input
-                  value={themeColors.accent}
-                  onChange={(e) => setThemeColors({ ...themeColors, accent: e.target.value })}
-                  placeholder="262 83% 58%"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label>Background Color (HSL)</Label>
-                <Input
-                  value={themeColors.background}
-                  onChange={(e) => setThemeColors({ ...themeColors, background: e.target.value })}
-                  placeholder="0 0% 100%"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label>Text Color (HSL)</Label>
-                <Input
-                  value={themeColors.foreground}
-                  onChange={(e) => setThemeColors({ ...themeColors, foreground: e.target.value })}
-                  placeholder="222 47% 11%"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label>Border Radius</Label>
-                <Input
-                  value={themeColors.borderRadius}
-                  onChange={(e) => setThemeColors({ ...themeColors, borderRadius: e.target.value })}
-                  placeholder="0.75rem"
-                />
-              </div>
-
-              <Button onClick={handleSaveTheme} className="w-full">
-                Save Theme (Applied to All Users)
-              </Button>
-            </CardContent>
-          </Card>
+          <ThemeControl />
         </TabsContent>
       </Tabs>
     </div>

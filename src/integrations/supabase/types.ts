@@ -73,6 +73,50 @@ export type Database = {
           },
         ]
       }
+      brochures: {
+        Row: {
+          brochure_type: string | null
+          brochure_url: string
+          created_at: string | null
+          id: string
+          is_active: boolean | null
+          outlet_id: string
+          title: string
+          updated_at: string | null
+          vendor_id: string
+        }
+        Insert: {
+          brochure_type?: string | null
+          brochure_url: string
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          outlet_id: string
+          title: string
+          updated_at?: string | null
+          vendor_id: string
+        }
+        Update: {
+          brochure_type?: string | null
+          brochure_url?: string
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          outlet_id?: string
+          title?: string
+          updated_at?: string | null
+          vendor_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "brochures_outlet_id_fkey"
+            columns: ["outlet_id"]
+            isOneToOne: false
+            referencedRelation: "outlets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       cart_items: {
         Row: {
           cash_payment_requested: boolean | null
@@ -217,6 +261,105 @@ export type Database = {
           },
         ]
       }
+      outlets: {
+        Row: {
+          created_at: string | null
+          id: string
+          is_active: boolean | null
+          location_address: string | null
+          location_lat: number | null
+          location_lng: number | null
+          name: string
+          updated_at: string | null
+          vendor_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          location_address?: string | null
+          location_lat?: number | null
+          location_lng?: number | null
+          name: string
+          updated_at?: string | null
+          vendor_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          location_address?: string | null
+          location_lat?: number | null
+          location_lng?: number | null
+          name?: string
+          updated_at?: string | null
+          vendor_id?: string
+        }
+        Relationships: []
+      }
+      payment_transactions: {
+        Row: {
+          account_number: string | null
+          amount: number
+          completed_at: string | null
+          created_at: string | null
+          external_transaction_id: string | null
+          failed_reason: string | null
+          fee: number
+          id: string
+          metadata: Json | null
+          payment_method: string
+          payment_provider: string | null
+          phone_number: string | null
+          status: string | null
+          transaction_type: string
+          updated_at: string | null
+          user_id: string
+          verification_code: string | null
+          verified_at: string | null
+        }
+        Insert: {
+          account_number?: string | null
+          amount: number
+          completed_at?: string | null
+          created_at?: string | null
+          external_transaction_id?: string | null
+          failed_reason?: string | null
+          fee?: number
+          id?: string
+          metadata?: Json | null
+          payment_method: string
+          payment_provider?: string | null
+          phone_number?: string | null
+          status?: string | null
+          transaction_type: string
+          updated_at?: string | null
+          user_id: string
+          verification_code?: string | null
+          verified_at?: string | null
+        }
+        Update: {
+          account_number?: string | null
+          amount?: number
+          completed_at?: string | null
+          created_at?: string | null
+          external_transaction_id?: string | null
+          failed_reason?: string | null
+          fee?: number
+          id?: string
+          metadata?: Json | null
+          payment_method?: string
+          payment_provider?: string | null
+          phone_number?: string | null
+          status?: string | null
+          transaction_type?: string
+          updated_at?: string | null
+          user_id?: string
+          verification_code?: string | null
+          verified_at?: string | null
+        }
+        Relationships: []
+      }
       product_documents: {
         Row: {
           created_at: string | null
@@ -294,12 +437,14 @@ export type Database = {
           id: string
           is_active: boolean | null
           is_bid: boolean | null
+          is_retail_shop: boolean | null
           is_sold: boolean | null
           location_address: string | null
           location_lat: number | null
           location_lng: number | null
           mobile_location: boolean | null
           name: string
+          outlet_id: string | null
           price: number
           product_type: Database["public"]["Enums"]["product_type"]
           starting_bid: number | null
@@ -316,12 +461,14 @@ export type Database = {
           id?: string
           is_active?: boolean | null
           is_bid?: boolean | null
+          is_retail_shop?: boolean | null
           is_sold?: boolean | null
           location_address?: string | null
           location_lat?: number | null
           location_lng?: number | null
           mobile_location?: boolean | null
           name: string
+          outlet_id?: string | null
           price: number
           product_type: Database["public"]["Enums"]["product_type"]
           starting_bid?: number | null
@@ -338,12 +485,14 @@ export type Database = {
           id?: string
           is_active?: boolean | null
           is_bid?: boolean | null
+          is_retail_shop?: boolean | null
           is_sold?: boolean | null
           location_address?: string | null
           location_lat?: number | null
           location_lng?: number | null
           mobile_location?: boolean | null
           name?: string
+          outlet_id?: string | null
           price?: number
           product_type?: Database["public"]["Enums"]["product_type"]
           starting_bid?: number | null
@@ -351,7 +500,15 @@ export type Database = {
           use_profile_picture?: boolean | null
           vendor_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "products_outlet_id_fkey"
+            columns: ["outlet_id"]
+            isOneToOne: false
+            referencedRelation: "outlets"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       profiles: {
         Row: {
@@ -407,8 +564,10 @@ export type Database = {
           created_at: string | null
           due_date: string
           id: string
+          outlet_id: string | null
           product_id: string
           status: string | null
+          subscription_type: string | null
           user_id: string
         }
         Insert: {
@@ -416,8 +575,10 @@ export type Database = {
           created_at?: string | null
           due_date: string
           id?: string
+          outlet_id?: string | null
           product_id: string
           status?: string | null
+          subscription_type?: string | null
           user_id: string
         }
         Update: {
@@ -425,11 +586,20 @@ export type Database = {
           created_at?: string | null
           due_date?: string
           id?: string
+          outlet_id?: string | null
           product_id?: string
           status?: string | null
+          subscription_type?: string | null
           user_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "subscriptions_outlet_id_fkey"
+            columns: ["outlet_id"]
+            isOneToOne: false
+            referencedRelation: "outlets"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "subscriptions_product_id_fkey"
             columns: ["product_id"]
@@ -447,9 +617,11 @@ export type Database = {
           created_at: string | null
           foreground_color: string
           id: string
+          logo_url: string | null
           primary_color: string
           updated_at: string | null
           updated_by: string | null
+          wallpaper_url: string | null
         }
         Insert: {
           accent_color?: string
@@ -458,9 +630,11 @@ export type Database = {
           created_at?: string | null
           foreground_color?: string
           id?: string
+          logo_url?: string | null
           primary_color?: string
           updated_at?: string | null
           updated_by?: string | null
+          wallpaper_url?: string | null
         }
         Update: {
           accent_color?: string
@@ -469,9 +643,11 @@ export type Database = {
           created_at?: string | null
           foreground_color?: string
           id?: string
+          logo_url?: string | null
           primary_color?: string
           updated_at?: string | null
           updated_by?: string | null
+          wallpaper_url?: string | null
         }
         Relationships: []
       }

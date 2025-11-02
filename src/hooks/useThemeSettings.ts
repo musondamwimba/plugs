@@ -39,6 +39,8 @@ export function useThemeSettings() {
       background_color?: string;
       foreground_color?: string;
       border_radius?: string;
+      wallpaper_url?: string;
+      logo_url?: string;
     }) => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('Not authenticated');
