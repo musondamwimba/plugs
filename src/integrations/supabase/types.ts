@@ -41,12 +41,45 @@ export type Database = {
         }
         Relationships: []
       }
+      admin_payment_accounts: {
+        Row: {
+          account_name: string
+          account_number: string
+          account_type: string
+          created_at: string | null
+          id: string
+          is_active: boolean | null
+          provider: string
+        }
+        Insert: {
+          account_name: string
+          account_number: string
+          account_type: string
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          provider: string
+        }
+        Update: {
+          account_name?: string
+          account_number?: string
+          account_type?: string
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          provider?: string
+        }
+        Relationships: []
+      }
       bids: {
         Row: {
           amount: number
           bidder_id: string
           created_at: string | null
           id: string
+          is_winning_bid: boolean | null
+          payment_deadline: string | null
+          payment_status: string | null
           product_id: string
         }
         Insert: {
@@ -54,6 +87,9 @@ export type Database = {
           bidder_id: string
           created_at?: string | null
           id?: string
+          is_winning_bid?: boolean | null
+          payment_deadline?: string | null
+          payment_status?: string | null
           product_id: string
         }
         Update: {
@@ -61,6 +97,9 @@ export type Database = {
           bidder_id?: string
           created_at?: string | null
           id?: string
+          is_winning_bid?: boolean | null
+          payment_deadline?: string | null
+          payment_status?: string | null
           product_id?: string
         }
         Relationships: [
@@ -489,6 +528,7 @@ export type Database = {
           price: number
           product_type: Database["public"]["Enums"]["product_type"]
           starting_bid: number | null
+          subscription_paid: boolean | null
           updated_at: string | null
           use_profile_picture: boolean | null
           vendor_id: string
@@ -513,6 +553,7 @@ export type Database = {
           price: number
           product_type: Database["public"]["Enums"]["product_type"]
           starting_bid?: number | null
+          subscription_paid?: boolean | null
           updated_at?: string | null
           use_profile_picture?: boolean | null
           vendor_id: string
@@ -537,6 +578,7 @@ export type Database = {
           price?: number
           product_type?: Database["public"]["Enums"]["product_type"]
           starting_bid?: number | null
+          subscription_paid?: boolean | null
           updated_at?: string | null
           use_profile_picture?: boolean | null
           vendor_id?: string
@@ -605,6 +647,8 @@ export type Database = {
           created_at: string | null
           due_date: string
           id: string
+          is_paid: boolean | null
+          last_payment_date: string | null
           outlet_id: string | null
           product_id: string
           status: string | null
@@ -616,6 +660,8 @@ export type Database = {
           created_at?: string | null
           due_date: string
           id?: string
+          is_paid?: boolean | null
+          last_payment_date?: string | null
           outlet_id?: string | null
           product_id: string
           status?: string | null
@@ -627,6 +673,8 @@ export type Database = {
           created_at?: string | null
           due_date?: string
           id?: string
+          is_paid?: boolean | null
+          last_payment_date?: string | null
           outlet_id?: string | null
           product_id?: string
           status?: string | null

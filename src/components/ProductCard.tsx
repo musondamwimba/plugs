@@ -11,14 +11,29 @@ interface ProductCardProps {
   price: number;
   image?: string;
   description?: string;
+  is_bid?: boolean;
+  bid_end_time?: string;
+  starting_bid?: number;
+  currentHighestBid?: number;
 }
 
-const ProductCard = ({ id, name, price, image, description }: ProductCardProps) => {
+const ProductCard = ({ 
+  id, 
+  name, 
+  price, 
+  image, 
+  description, 
+  is_bid = false,
+  bid_end_time,
+  starting_bid,
+  currentHighestBid 
+}: ProductCardProps) => {
   const { addToCart } = useCart();
   const { addFavorite, removeFavorite, favorites } = useFavorites();
   const navigate = useNavigate();
   
   const isFavorite = favorites?.some((fav: any) => fav.product_id === id);
+  const isExpired = bid_end_time ? new Date(bid_end_time) < new Date() : false;
 
   const handleViewDetails = () => {
     if (id) navigate(`/product/${id}`);
@@ -40,23 +55,54 @@ const ProductCard = ({ id, name, price, image, description }: ProductCardProps) 
         )}
       </CardHeader>
       <CardContent className="p-4 pt-2">
-        <div className="flex items-baseline gap-2">
-          <span className="text-2xl font-bold text-primary">{price.toLocaleString()}</span>
-          <span className="text-sm text-muted-foreground">ZMK</span>
-        </div>
+        {is_bid ? (
+          <div className="space-y-2">
+            <div className="flex items-baseline gap-2">
+              <span className="text-sm text-muted-foreground">Current Bid:</span>
+              <span className="text-xl font-bold text-primary">
+                {(currentHighestBid || starting_bid || 0).toLocaleString()}
+              </span>
+              <span className="text-sm text-muted-foreground">ZMK</span>
+            </div>
+            {bid_end_time && (
+              <p className="text-xs text-muted-foreground">
+                {isExpired ? "Bidding ended" : `Ends: ${new Date(bid_end_time).toLocaleString()}`}
+              </p>
+            )}
+          </div>
+        ) : (
+          <div className="flex items-baseline gap-2">
+            <span className="text-2xl font-bold text-primary">{price.toLocaleString()}</span>
+            <span className="text-sm text-muted-foreground">ZMK</span>
+          </div>
+        )}
       </CardContent>
       <CardFooter className="p-4 pt-0 gap-2">
-        <Button 
-          variant="default" 
-          className="flex-1 gap-2"
-          onClick={(e) => {
-            e.stopPropagation();
-            id && addToCart(id);
-          }}
-        >
-          <ShoppingCart className="w-4 h-4" />
-          Add to Cart
-        </Button>
+        {is_bid ? (
+          <Button 
+            variant="default" 
+            className="flex-1"
+            onClick={(e) => {
+              e.stopPropagation();
+              if (id) navigate(`/product/${id}`);
+            }}
+            disabled={isExpired}
+          >
+            {isExpired ? "Bidding Ended" : "Place a Bid"}
+          </Button>
+        ) : (
+          <Button 
+            variant="default" 
+            className="flex-1 gap-2"
+            onClick={(e) => {
+              e.stopPropagation();
+              id && addToCart(id);
+            }}
+          >
+            <ShoppingCart className="w-4 h-4" />
+            Add to Cart
+          </Button>
+        )}
         <Button
           size="icon"
           variant={isFavorite ? "default" : "outline"}

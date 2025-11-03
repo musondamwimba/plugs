@@ -2,11 +2,14 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/com
 import { useMessages } from "@/hooks/useMessages";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { formatDistanceToNow } from "date-fns";
-import { MessageCircle } from "lucide-react";
+import { MessageCircle, ExternalLink } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 const Messages = () => {
   const { messages, isLoading } = useMessages();
+  const navigate = useNavigate();
 
   if (isLoading) {
     return (
@@ -35,12 +38,12 @@ const Messages = () => {
       ) : (
         <div className="space-y-4">
           {messages.map((msg: any) => (
-            <Card key={msg.id} className="hover:shadow-md transition-shadow cursor-pointer">
+            <Card key={msg.id} className="hover:shadow-md transition-shadow">
               <CardHeader>
                 <div className="flex justify-between items-start">
                   <div className="flex items-center gap-2">
                     <CardTitle className="text-lg">
-                      {msg.sender?.profiles?.full_name || "Unknown User"}
+                      {msg.sender?.profiles?.full_name || "Admin"}
                     </CardTitle>
                     {!msg.is_read && <Badge variant="default">New</Badge>}
                   </div>
@@ -49,10 +52,20 @@ const Messages = () => {
                   </span>
                 </div>
                 <CardDescription>{msg.content}</CardDescription>
-                {msg.products && (
-                  <p className="text-sm text-muted-foreground mt-2">
-                    About: {msg.products.name}
-                  </p>
+                {msg.product_id && msg.products && (
+                  <div className="flex items-center justify-between mt-3 pt-3 border-t">
+                    <p className="text-sm text-muted-foreground">
+                      About: {msg.products.name}
+                    </p>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => navigate(`/product/${msg.product_id}`)}
+                    >
+                      <ExternalLink className="w-4 h-4 mr-2" />
+                      View Product
+                    </Button>
+                  </div>
                 )}
               </CardHeader>
             </Card>

@@ -2,17 +2,21 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
+import { Checkbox } from "@/components/ui/checkbox";
 import { useProfile } from "@/hooks/useProfile";
 import { useToast } from "@/hooks/use-toast";
+import { useState } from "react";
 
 const Subscriptions = () => {
   const navigate = useNavigate();
   const { profile } = useProfile();
   const { toast } = useToast();
+  const queryClient = useQueryClient();
+  const [selectedSubscriptions, setSelectedSubscriptions] = useState<string[]>([]);
 
   const { data: subscriptions, isLoading } = useQuery({
     queryKey: ['subscriptions'],
@@ -32,8 +36,70 @@ const Subscriptions = () => {
   });
 
   const totalMonthly = subscriptions?.reduce((sum, sub) => sum + Number(sub.amount), 0) || 0;
+  const selectedTotal = subscriptions
+    ?.filter(sub => selectedSubscriptions.includes(sub.id))
+    .reduce((sum, sub) => sum + Number(sub.amount), 0) || 0;
 
-  const handleQuickPay = async () => {
+  const handleToggleSubscription = (subscriptionId: string) => {
+    setSelectedSubscriptions(prev =>
+      prev.includes(subscriptionId)
+        ? prev.filter(id => id !== subscriptionId)
+        : [...prev, subscriptionId]
+    );
+  };
+
+  const handlePaySelected = async () => {
+    if (!profile || selectedSubscriptions.length === 0) return;
+    
+    const balance = Number(profile.balance) || 0;
+    if (balance < selectedTotal) {
+      toast({
+        title: "Insufficient balance",
+        description: "Please deposit funds to pay for your subscriptions.",
+        variant: "destructive",
+      });
+      navigate('/profile/deposit');
+      return;
+    }
+
+    try {
+      // Update selected subscriptions as paid
+      const { error } = await supabase
+        .from('subscriptions')
+        .update({ 
+          is_paid: true, 
+          last_payment_date: new Date().toISOString() 
+        })
+        .in('id', selectedSubscriptions);
+
+      if (error) throw error;
+
+      // Deduct from balance
+      const { error: balanceError } = await supabase
+        .from('profiles')
+        .update({ balance: balance - selectedTotal })
+        .eq('id', profile.id);
+
+      if (balanceError) throw balanceError;
+
+      toast({
+        title: "Payment successful",
+        description: `ZMK ${selectedTotal.toFixed(2)} has been deducted from your balance.`,
+      });
+
+      setSelectedSubscriptions([]);
+      queryClient.invalidateQueries({ queryKey: ['subscriptions'] });
+      queryClient.invalidateQueries({ queryKey: ['profile'] });
+    } catch (error: any) {
+      toast({
+        title: "Payment failed",
+        description: error.message,
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleQuickPayAll = async () => {
     if (!profile) return;
     
     const balance = Number(profile.balance) || 0;
@@ -47,10 +113,42 @@ const Subscriptions = () => {
       return;
     }
 
-    toast({
-      title: "Payment successful",
-      description: `ZMK ${totalMonthly.toFixed(2)} has been deducted from your balance.`,
-    });
+    try {
+      const subscriptionIds = subscriptions?.map(sub => sub.id) || [];
+      
+      // Update all subscriptions as paid
+      const { error } = await supabase
+        .from('subscriptions')
+        .update({ 
+          is_paid: true, 
+          last_payment_date: new Date().toISOString() 
+        })
+        .in('id', subscriptionIds);
+
+      if (error) throw error;
+
+      // Deduct from balance
+      const { error: balanceError } = await supabase
+        .from('profiles')
+        .update({ balance: balance - totalMonthly })
+        .eq('id', profile.id);
+
+      if (balanceError) throw balanceError;
+
+      toast({
+        title: "Payment successful",
+        description: `ZMK ${totalMonthly.toFixed(2)} has been deducted from your balance.`,
+      });
+
+      queryClient.invalidateQueries({ queryKey: ['subscriptions'] });
+      queryClient.invalidateQueries({ queryKey: ['profile'] });
+    } catch (error: any) {
+      toast({
+        title: "Payment failed",
+        description: error.message,
+        variant: "destructive",
+      });
+    }
   };
 
   return (
@@ -91,9 +189,13 @@ const Subscriptions = () => {
               {subscriptions.map((subscription) => (
                 <div
                   key={subscription.id}
-                  className="flex items-center justify-between p-4 border rounded-lg"
+                  className="flex items-center gap-4 p-4 border rounded-lg"
                 >
-                  <div className="space-y-1">
+                  <Checkbox
+                    checked={selectedSubscriptions.includes(subscription.id)}
+                    onCheckedChange={() => handleToggleSubscription(subscription.id)}
+                  />
+                  <div className="flex-1 space-y-1">
                     <p className="font-semibold">{subscription.products?.name}</p>
                     <p className="text-sm text-muted-foreground">
                       Due: {new Date(subscription.due_date).toLocaleDateString()}
@@ -103,8 +205,8 @@ const Subscriptions = () => {
                     <span className="font-bold text-lg">
                       ZMK {subscription.amount}
                     </span>
-                    <Badge variant={subscription.status === 'active' ? 'default' : 'secondary'}>
-                      {subscription.status}
+                    <Badge variant={subscription.is_paid ? 'default' : 'secondary'}>
+                      {subscription.is_paid ? 'Paid' : 'Unpaid'}
                     </Badge>
                   </div>
                 </div>
@@ -119,13 +221,25 @@ const Subscriptions = () => {
       </Card>
 
       {subscriptions && subscriptions.length > 0 && (
-        <Button 
-          className="w-full" 
-          size="lg"
-          onClick={handleQuickPay}
-        >
-          Quick Pay (ZMK {totalMonthly.toFixed(2)})
-        </Button>
+        <div className="space-y-3">
+          <Button 
+            className="w-full" 
+            size="lg"
+            onClick={handleQuickPayAll}
+          >
+            Pay All (ZMK {totalMonthly.toFixed(2)})
+          </Button>
+          {selectedSubscriptions.length > 0 && (
+            <Button 
+              className="w-full" 
+              size="lg"
+              variant="outline"
+              onClick={handlePaySelected}
+            >
+              Pay Selected ({selectedSubscriptions.length}) - ZMK {selectedTotal.toFixed(2)}
+            </Button>
+          )}
+        </div>
       )}
     </div>
   );

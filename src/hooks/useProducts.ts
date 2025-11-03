@@ -14,10 +14,12 @@ export function useProducts() {
         .from('products')
         .select(`
           *,
-          product_images(*)
+          product_images(*),
+          bids(amount)
         `)
         .eq('is_active', true)
         .eq('is_sold', false)
+        .eq('subscription_paid', true)
         .order('created_at', { ascending: false });
 
       if (error) throw error;

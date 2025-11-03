@@ -114,16 +114,26 @@ const Index = () => {
               <Skeleton key={i} className="h-80 rounded-lg" />
             ))
           ) : featuredProducts && featuredProducts.length > 0 ? (
-            featuredProducts.map((product) => (
-              <ProductCard 
-                key={product.id}
-                id={product.id}
-                name={product.name}
-                price={product.price}
-                description={product.description || ''}
-                image={product.product_images?.[0]?.image_url}
-              />
-            ))
+            featuredProducts.map((product) => {
+              const highestBid = product.bids && product.bids.length > 0
+                ? Math.max(...product.bids.map((b: any) => b.amount))
+                : undefined;
+
+              return (
+                <ProductCard 
+                  key={product.id}
+                  id={product.id}
+                  name={product.name}
+                  price={product.price}
+                  description={product.description || ''}
+                  image={product.product_images?.[0]?.image_url}
+                  is_bid={product.is_bid}
+                  bid_end_time={product.bid_end_time}
+                  starting_bid={product.starting_bid}
+                  currentHighestBid={highestBid}
+                />
+              );
+            })
           ) : (
             <div className="col-span-full text-center py-12">
               <p className="text-muted-foreground">
