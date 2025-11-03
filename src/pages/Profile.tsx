@@ -2,18 +2,26 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { User, Loader2 } from "lucide-react";
+import { User, Loader2, Trash2 } from "lucide-react";
 import { useProfile } from "@/hooks/useProfile";
 import { useState, useEffect } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
+import { useNavigate } from "react-router-dom";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 
 const Profile = () => {
   const { profile, isLoading, updateProfile } = useProfile();
+  const { toast } = useToast();
+  const navigate = useNavigate();
   const [formData, setFormData] = useState({
     full_name: '',
     phone_number: '',
     nrc_number: '',
   });
+  const [hasPendingTransactions, setHasPendingTransactions] = useState(false);
+  const [isCheckingTransactions, setIsCheckingTransactions] = useState(false);
 
   useEffect(() => {
     if (profile) {
@@ -28,6 +36,62 @@ const Profile = () => {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     updateProfile(formData);
+  };
+
+  const checkPendingTransactions = async () => {
+    setIsCheckingTransactions(true);
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const { data: pendingTxns, error } = await supabase
+        .from('payment_transactions')
+        .select('id')
+        .eq('user_id', user.id)
+        .eq('status', 'pending');
+
+      if (error) throw error;
+      setHasPendingTransactions((pendingTxns?.length || 0) > 0);
+    } catch (error: any) {
+      console.error('Error checking transactions:', error);
+    } finally {
+      setIsCheckingTransactions(false);
+    }
+  };
+
+  const handleDeleteAccount = async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const scheduledDate = new Date();
+      scheduledDate.setDate(scheduledDate.getDate() + 30);
+
+      const { error } = await supabase
+        .from('profiles')
+        .update({
+          deleted_at: new Date().toISOString(),
+          deletion_scheduled_for: scheduledDate.toISOString(),
+        })
+        .eq('id', user.id);
+
+      if (error) throw error;
+
+      toast({
+        title: "Account deletion scheduled",
+        description: "Your account will be permanently deleted in 30 days.",
+      });
+
+      // Sign out user
+      await supabase.auth.signOut();
+      navigate('/auth');
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
+    }
   };
 
   if (isLoading) {
@@ -89,6 +153,52 @@ const Profile = () => {
               Save Changes
             </Button>
           </form>
+        </CardContent>
+      </Card>
+
+      <Card className="border-destructive">
+        <CardHeader>
+          <CardTitle className="text-destructive">Danger Zone</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-4">
+            <p className="text-sm text-muted-foreground">
+              Once you delete your account, there is no going back. Your account will be kept for 30 days before permanent deletion.
+            </p>
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button 
+                  variant="destructive" 
+                  className="w-full"
+                  onClick={checkPendingTransactions}
+                  disabled={isCheckingTransactions}
+                >
+                  <Trash2 className="w-4 h-4 mr-2" />
+                  {isCheckingTransactions ? "Checking..." : "Delete Account"}
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    {hasPendingTransactions ? (
+                      "You have pending transactions. Please complete or cancel them before deleting your account."
+                    ) : (
+                      "This action will schedule your account for deletion in 30 days. You can cancel this by contacting support within that period."
+                    )}
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                  {!hasPendingTransactions && (
+                    <AlertDialogAction onClick={handleDeleteAccount} className="bg-destructive text-destructive-foreground">
+                      Delete Account
+                    </AlertDialogAction>
+                  )}
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+          </div>
         </CardContent>
       </Card>
     </div>

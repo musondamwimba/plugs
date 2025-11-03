@@ -131,6 +131,7 @@ const Index = () => {
                   bid_end_time={product.bid_end_time}
                   starting_bid={product.starting_bid}
                   currentHighestBid={highestBid}
+                  bids={product.bids}
                 />
               );
             })

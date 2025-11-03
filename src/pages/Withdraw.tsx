@@ -9,11 +9,13 @@ import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useProfile } from "@/hooks/useProfile";
+import { useAdminSettings } from "@/hooks/useAdminSettings";
 
 const Withdraw = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const { profile } = useProfile();
+  const { settings } = useAdminSettings();
   const [amount, setAmount] = useState("");
   const [paymentMethod, setPaymentMethod] = useState("mobile_money");
   const [accountNumber, setAccountNumber] = useState("");
@@ -21,6 +23,13 @@ const Withdraw = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const withdrawalFee = 50;
+
+  const paymentMethods = [
+    { value: "mobile_money", label: "MTN Mobile Money" },
+    { value: "airtel_money", label: "Airtel Money" },
+    { value: "zamtel_kwacha", label: "Zamtel Kwacha" },
+    { value: "bank_transfer", label: "Bank Transfer" },
+  ];
 
   const handleWithdraw = async () => {
     if (!amount || parseFloat(amount) <= 0) {
@@ -136,13 +145,16 @@ const Withdraw = () => {
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="mobile_money">Mobile Money</SelectItem>
-                <SelectItem value="bank_transfer">Bank Transfer</SelectItem>
+                {paymentMethods.map((method) => (
+                  <SelectItem key={method.value} value={method.value}>
+                    {method.label}
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
           </div>
 
-          {paymentMethod === "mobile_money" && (
+          {(paymentMethod === "mobile_money" || paymentMethod === "airtel_money" || paymentMethod === "zamtel_kwacha") && (
             <div className="space-y-2">
               <Label htmlFor="phone">Phone Number</Label>
               <Input

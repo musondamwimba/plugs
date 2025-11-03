@@ -4,9 +4,10 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { useUserManagement } from "@/hooks/useUserManagement";
+import { useAdminSettings } from "@/hooks/useAdminSettings";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
@@ -15,12 +16,29 @@ import { ThemeControl } from "@/components/ThemeControl";
 const Admin = () => {
   const { toast } = useToast();
   const { users, isLoading: usersLoading, moderateUser } = useUserManagement();
+  const { settings, updateSetting } = useAdminSettings();
   
   const [depositFeeType, setDepositFeeType] = useState<'percentage' | 'fixed'>('percentage');
   const [depositFeeValue, setDepositFeeValue] = useState('5');
   const [adminFeeType, setAdminFeeType] = useState<'percentage' | 'fixed'>('percentage');
   const [adminFeeValue, setAdminFeeValue] = useState('10');
   const [subscriptionFee, setSubscriptionFee] = useState('50');
+
+  useEffect(() => {
+    if (settings) {
+      if (settings.deposit_fee) {
+        setDepositFeeType(settings.deposit_fee.type);
+        setDepositFeeValue(String(settings.deposit_fee.value));
+      }
+      if (settings.admin_fee) {
+        setAdminFeeType(settings.admin_fee.type);
+        setAdminFeeValue(String(settings.admin_fee.value));
+      }
+      if (settings.subscription_fee) {
+        setSubscriptionFee(String(settings.subscription_fee.value));
+      }
+    }
+  }, [settings]);
   
   const [selectedUser, setSelectedUser] = useState<any>(null);
   const [moderationAction, setModerationAction] = useState<'active' | 'suspended' | 'banned' | 'blocked'>('active');
@@ -34,10 +52,9 @@ const Admin = () => {
   ];
 
   const handleSaveRates = () => {
-    toast({
-      title: "Rates updated",
-      description: "Fee rates have been saved successfully.",
-    });
+    updateSetting({ key: 'deposit_fee', value: { type: depositFeeType, value: parseFloat(depositFeeValue) } });
+    updateSetting({ key: 'admin_fee', value: { type: adminFeeType, value: parseFloat(adminFeeValue) } });
+    updateSetting({ key: 'subscription_fee', value: { type: 'fixed', value: parseFloat(subscriptionFee) } });
   };
 
   const handleModerateUser = () => {
@@ -138,7 +155,7 @@ const Admin = () => {
               </div>
 
               <div className="space-y-3">
-                <Label>Admin Fee (per transaction)</Label>
+                <Label>T&A Fee (Tax and Admin per transaction)</Label>
                 <div className="flex gap-3">
                   <Select value={adminFeeType} onValueChange={(v: 'percentage' | 'fixed') => setAdminFeeType(v)}>
                     <SelectTrigger className="w-[140px]">

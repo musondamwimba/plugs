@@ -71,6 +71,30 @@ export type Database = {
         }
         Relationships: []
       }
+      admin_settings: {
+        Row: {
+          id: string
+          setting_key: string
+          setting_value: Json
+          updated_at: string | null
+          updated_by: string | null
+        }
+        Insert: {
+          id?: string
+          setting_key: string
+          setting_value: Json
+          updated_at?: string | null
+          updated_by?: string | null
+        }
+        Update: {
+          id?: string
+          setting_key?: string
+          setting_value?: Json
+          updated_at?: string | null
+          updated_by?: string | null
+        }
+        Relationships: []
+      }
       bids: {
         Row: {
           amount: number
@@ -597,6 +621,8 @@ export type Database = {
         Row: {
           balance: number | null
           created_at: string | null
+          deleted_at: string | null
+          deletion_scheduled_for: string | null
           full_name: string
           id: string
           nrc_back_url: string | null
@@ -612,6 +638,8 @@ export type Database = {
         Insert: {
           balance?: number | null
           created_at?: string | null
+          deleted_at?: string | null
+          deletion_scheduled_for?: string | null
           full_name: string
           id: string
           nrc_back_url?: string | null
@@ -627,6 +655,8 @@ export type Database = {
         Update: {
           balance?: number | null
           created_at?: string | null
+          deleted_at?: string | null
+          deletion_scheduled_for?: string | null
           full_name?: string
           id?: string
           nrc_back_url?: string | null

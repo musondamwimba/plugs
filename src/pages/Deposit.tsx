@@ -9,27 +9,44 @@ import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useProfile } from "@/hooks/useProfile";
+import { useAdminSettings } from "@/hooks/useAdminSettings";
 
 const Deposit = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const { profile } = useProfile();
+  const { settings } = useAdminSettings();
   const [amount, setAmount] = useState("");
   const [paymentMethod, setPaymentMethod] = useState("mobile_money");
   const [accountNumber, setAccountNumber] = useState("");
   const [phoneNumber, setPhoneNumber] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const paymentMethods = [
-    { value: "mobile_money", label: "Mobile Money", fee: "2%" },
-    { value: "bank_transfer", label: "Bank Transfer", fee: "1.5%" },
-  ];
-
   const calculateFee = () => {
     const amt = parseFloat(amount) || 0;
-    const feePercent = paymentMethod === "mobile_money" ? 0.02 : 0.015;
-    return amt * feePercent;
+    if (!settings?.deposit_fee) return 0;
+    
+    const depositFee = settings.deposit_fee;
+    if (depositFee.type === 'percentage') {
+      return amt * (depositFee.value / 100);
+    }
+    return depositFee.value;
   };
+
+  const getFeeDisplay = () => {
+    if (!settings?.deposit_fee) return "";
+    const depositFee = settings.deposit_fee;
+    return depositFee.type === 'percentage' 
+      ? `${depositFee.value}%` 
+      : `${depositFee.value} ZMK`;
+  };
+
+  const paymentMethods = [
+    { value: "mobile_money", label: "MTN Mobile Money" },
+    { value: "airtel_money", label: "Airtel Money" },
+    { value: "zamtel_kwacha", label: "Zamtel Kwacha" },
+    { value: "bank_transfer", label: "Bank Transfer" },
+  ];
 
   const handleDeposit = async () => {
     if (!amount || parseFloat(amount) <= 0) {
@@ -138,14 +155,14 @@ const Deposit = () => {
               <SelectContent>
                 {paymentMethods.map((method) => (
                   <SelectItem key={method.value} value={method.value}>
-                    {method.label} (Fee: {method.fee})
+                    {method.label} {getFeeDisplay() && `(Fee: ${getFeeDisplay()})`}
                   </SelectItem>
                 ))}
               </SelectContent>
             </Select>
           </div>
 
-          {paymentMethod === "mobile_money" && (
+          {(paymentMethod === "mobile_money" || paymentMethod === "airtel_money" || paymentMethod === "zamtel_kwacha") && (
             <div className="space-y-2">
               <Label htmlFor="phone">Phone Number</Label>
               <Input
