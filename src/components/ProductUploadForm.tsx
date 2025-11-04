@@ -200,10 +200,39 @@ const ProductUploadForm = ({ existingProduct }: ProductUploadFormProps) => {
       return;
     }
     
-    if (locations.length === 0) {
+    // Validate bidding fields if enabled
+    if (formData.is_bid) {
+      if (!formData.starting_bid || parseFloat(formData.starting_bid) <= 0) {
+        toast({
+          title: "Invalid starting bid",
+          description: "Please enter a valid starting bid amount.",
+          variant: "destructive",
+        });
+        return;
+      }
+      if (!formData.bid_end_time) {
+        toast({
+          title: "Missing bid end time",
+          description: "Please select an end time for the bid.",
+          variant: "destructive",
+        });
+        return;
+      }
+      // Validate bid end time is in the future
+      if (new Date(formData.bid_end_time) <= new Date()) {
+        toast({
+          title: "Invalid bid end time",
+          description: "Bid end time must be in the future.",
+          variant: "destructive",
+        });
+        return;
+      }
+    }
+    
+    if (locations.length === 0 && !formData.mobile_location) {
       toast({
         title: "Location required",
-        description: "Please add at least one location for your product.",
+        description: "Please add at least one location for your product or enable mobile service.",
         variant: "destructive",
       });
       return;
@@ -227,17 +256,11 @@ const ProductUploadForm = ({ existingProduct }: ProductUploadFormProps) => {
         is_bid: formData.is_bid,
         mobile_location: formData.mobile_location,
         use_profile_picture: useProfilePic,
-        location_lat: locations[0]?.lat,
-        location_lng: locations[0]?.lng,
+        location_lat: locations.length > 0 ? locations[0]?.lat : null,
+        location_lng: locations.length > 0 ? locations[0]?.lng : null,
       };
 
       if (formData.is_bid) {
-        if (!formData.starting_bid || parseFloat(formData.starting_bid) <= 0) {
-          throw new Error('Please enter a valid starting bid amount');
-        }
-        if (!formData.bid_end_time) {
-          throw new Error('Please select an end time for the bid');
-        }
         productData.starting_bid = parseFloat(formData.starting_bid);
         productData.bid_end_time = formData.bid_end_time;
       }
@@ -291,14 +314,17 @@ const ProductUploadForm = ({ existingProduct }: ProductUploadFormProps) => {
         navigate('/my-products');
       } else {
         // Prompt to pay for subscription
+        // Show subscription payment prompt
+        const subscriptionAmount = 50; // This will be fetched from admin settings by the trigger
         toast({
           title: "Product uploaded successfully!",
-          description: "Please pay for your subscription to make this product visible in search.",
+          description: `Subscription fee: ZMK ${subscriptionAmount}/month. Pay now to make your product visible in search results.`,
           action: (
             <Button onClick={() => navigate('/subscriptions')} size="sm">
-              Pay Subscription
+              Pay Now
             </Button>
           ),
+          duration: 10000,
         });
         
         // Reset form for new product

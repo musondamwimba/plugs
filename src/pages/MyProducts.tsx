@@ -23,6 +23,13 @@ const MyProducts = () => {
     e.stopPropagation();
     
     try {
+      // First delete related subscriptions
+      await supabase
+        .from('subscriptions')
+        .delete()
+        .eq('product_id', productId);
+
+      // Then delete the product
       const { error } = await supabase
         .from('products')
         .delete()
@@ -31,9 +38,10 @@ const MyProducts = () => {
       if (error) throw error;
 
       queryClient.invalidateQueries({ queryKey: ['my-products'] });
+      queryClient.invalidateQueries({ queryKey: ['subscriptions'] });
       toast({
         title: "Product deleted",
-        description: "Your product has been deleted successfully.",
+        description: "Your product and its subscription have been deleted successfully.",
       });
     } catch (error: any) {
       toast({

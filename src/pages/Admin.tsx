@@ -47,8 +47,14 @@ const Admin = () => {
 
   const stats = [
     { title: "Total Users", value: users?.length || 0, icon: Users, color: "text-blue-600" },
-    { title: "Active Users", value: users?.filter((u: any) => !u.user_moderation?.[0] || u.user_moderation[0].status === 'active').length || 0, icon: Users, color: "text-green-600" },
-    { title: "Suspended/Banned", value: users?.filter((u: any) => u.user_moderation?.[0]?.status === 'suspended' || u.user_moderation?.[0]?.status === 'banned').length || 0, icon: Ban, color: "text-destructive" },
+    { title: "Active Users", value: users?.filter((u: any) => {
+      const moderation = Array.isArray(u.user_moderation) ? u.user_moderation[0] : u.user_moderation?.[0];
+      return !moderation || moderation.status === 'active';
+    }).length || 0, icon: Users, color: "text-green-600" },
+    { title: "Suspended/Banned", value: users?.filter((u: any) => {
+      const moderation = Array.isArray(u.user_moderation) ? u.user_moderation[0] : u.user_moderation?.[0];
+      return moderation?.status === 'suspended' || moderation?.status === 'banned';
+    }).length || 0, icon: Ban, color: "text-destructive" },
   ];
 
   const handleSaveRates = () => {
@@ -214,12 +220,16 @@ const Admin = () => {
                   {users?.map((user: any) => (
                     <div key={user.id} className="flex items-center justify-between p-4 border rounded-lg hover:bg-muted/50">
                       <div className="flex-1">
-                        <div className="font-medium">{user.full_name}</div>
-                        <div className="text-sm text-muted-foreground">{user.phone_number}</div>
+                        <div className="font-medium">{user.full_name || 'No name'}</div>
+                        <div className="text-sm text-muted-foreground">{user.email}</div>
+                        <div className="text-sm text-muted-foreground">{user.phone_number || 'No phone'}</div>
                         <div className="text-xs text-muted-foreground">Balance: ZMK {user.balance || 0}</div>
                       </div>
                       <div className="flex items-center gap-2">
-                        {user.user_moderation?.[0] && getStatusBadge(user.user_moderation[0].status)}
+                        {(() => {
+                          const moderation = Array.isArray(user.user_moderation) ? user.user_moderation[0] : user.user_moderation?.[0];
+                          return moderation && getStatusBadge(moderation.status);
+                        })()}
                         <Dialog>
                           <DialogTrigger asChild>
                             <Button 

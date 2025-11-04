@@ -904,6 +904,19 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      get_all_users_with_profiles: {
+        Args: never
+        Returns: {
+          balance: number
+          created_at: string
+          deleted_at: string
+          email: string
+          full_name: string
+          id: string
+          phone_number: string
+          user_moderation: Json
+        }[]
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]

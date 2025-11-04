@@ -9,21 +9,16 @@ export function useUserManagement() {
   const { data: users, isLoading } = useQuery({
     queryKey: ['all-users'],
     queryFn: async () => {
-      const { data: profiles, error } = await supabase
-        .from('profiles')
-        .select(`
-          *,
-          user_moderation (
-            status,
-            reason,
-            fine_amount,
-            expires_at
-          )
-        `)
-        .order('created_at', { ascending: false });
+      const { data, error } = await supabase
+        .rpc('get_all_users_with_profiles');
 
       if (error) throw error;
-      return profiles;
+      
+      // Parse user_moderation JSON back to array
+      return data?.map((user: any) => ({
+        ...user,
+        user_moderation: user.user_moderation || []
+      }));
     },
   });
 
