@@ -66,17 +66,28 @@ export function useBids(productId?: string) {
         .eq('id', productId)
         .single();
 
-      // Notify previous highest bidder they've been outbid via messages
-      if (existingBids && existingBids.length > 0 && product) {
-        const previousHighest = existingBids[0];
-        if (previousHighest.bidder_id !== user.id) {
-          await supabase.from('messages').insert({
-            sender_id: product.vendor_id,
-            receiver_id: previousHighest.bidder_id,
-            product_id: productId,
-            content: `You have been outbid on "${product.name}". The current highest bid is ${amount} ZMK. Place a higher bid to win!`,
-            is_read: false
-          });
+      if (product) {
+        // Notify vendor of new bid
+        await supabase.from('messages').insert({
+          sender_id: user.id,
+          receiver_id: product.vendor_id,
+          product_id: productId,
+          content: `A new bid of ${amount} ZMK has been placed on your product "${product.name}".`,
+          is_read: false
+        });
+
+        // Notify previous highest bidder they've been outbid
+        if (existingBids && existingBids.length > 0) {
+          const previousHighest = existingBids[0];
+          if (previousHighest.bidder_id !== user.id) {
+            await supabase.from('messages').insert({
+              sender_id: product.vendor_id,
+              receiver_id: previousHighest.bidder_id,
+              product_id: productId,
+              content: `You have been outbid on "${product.name}". The current highest bid is ${amount} ZMK. Place a higher bid to win!`,
+              is_read: false
+            });
+          }
         }
       }
 

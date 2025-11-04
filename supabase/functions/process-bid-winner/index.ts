@@ -107,13 +107,22 @@ serve(async (req) => {
         payment_deadline: paymentDeadline.toISOString()
       }).eq('id', winningBid.id);
 
-      // Notify winner
+      // Notify winner and allow them to add to cart
       await supabaseClient.from('messages').insert({
         sender_id: product.vendor_id,
         receiver_id: winningBid.bidder_id,
         product_id: product.id,
-        content: `Congratulations! You won the bid for "${product.name}" at ${winningBid.amount} ZMK. Please complete payment within 48 hours to secure your purchase.`,
+        content: `🎉 Congratulations! You won the bid for "${product.name}" at ${winningBid.amount} ZMK. You can now add this item to your cart and proceed to checkout. You have 48 hours to complete the purchase.`,
         is_read: false
+      });
+      
+      // Create notification
+      await supabaseClient.from('notifications').insert({
+        user_id: winningBid.bidder_id,
+        product_id: product.id,
+        type: 'bid_won',
+        title: 'You Won!',
+        message: `Congratulations! You won the bid for "${product.name}" at ${winningBid.amount} ZMK.`
       });
 
       // Notify vendor

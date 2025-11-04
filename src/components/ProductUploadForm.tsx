@@ -290,6 +290,17 @@ const ProductUploadForm = ({ existingProduct }: ProductUploadFormProps) => {
       if (existingProduct) {
         navigate('/my-products');
       } else {
+        // Prompt to pay for subscription
+        toast({
+          title: "Product uploaded successfully!",
+          description: "Please pay for your subscription to make this product visible in search.",
+          action: (
+            <Button onClick={() => navigate('/subscriptions')} size="sm">
+              Pay Subscription
+            </Button>
+          ),
+        });
+        
         // Reset form for new product
         setFormData({
           name: "",

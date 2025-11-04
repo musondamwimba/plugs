@@ -47,9 +47,12 @@ const ProductCard = ({
   const isFavorite = favorites?.some((fav: any) => fav.product_id === id);
   const isExpired = bid_end_time ? new Date(bid_end_time) < new Date() : false;
   
-  const currentBid = bids && bids.length > 0 
+  // Get the highest/last bid
+  const lastBid = bids && bids.length > 0 
     ? Math.max(...bids.map(b => b.amount))
     : (currentHighestBid || starting_bid || 0);
+    
+  const currentBid = lastBid;
     
   const minBid = currentBid + 1;
 
@@ -86,12 +89,19 @@ const ProductCard = ({
       <CardContent className="p-4 pt-2">
         {is_bid ? (
           <div className="space-y-2">
-            <div className="flex items-baseline gap-2">
-              <span className="text-sm text-muted-foreground">Current Bid:</span>
-              <span className="text-xl font-bold text-primary">
-                {currentBid.toLocaleString()}
-              </span>
-              <span className="text-sm text-muted-foreground">ZMK</span>
+            <div className="space-y-1">
+              <div className="flex items-baseline gap-2">
+                <span className="text-sm text-muted-foreground">Last Bid:</span>
+                <span className="text-xl font-bold text-primary">
+                  {lastBid.toLocaleString()}
+                </span>
+                <span className="text-sm text-muted-foreground">ZMK</span>
+              </div>
+              {bids && bids.length > 0 && (
+                <p className="text-xs text-muted-foreground">
+                  {bids.length} bid{bids.length !== 1 ? 's' : ''} placed
+                </p>
+              )}
             </div>
             {bid_end_time && !isExpired && (
               <p className="text-xs text-muted-foreground">

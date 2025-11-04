@@ -1,22 +1,20 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Trash2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
-import { Checkbox } from "@/components/ui/checkbox";
 import { useProfile } from "@/hooks/useProfile";
 import { useToast } from "@/hooks/use-toast";
-import { useState } from "react";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 
 const Subscriptions = () => {
   const navigate = useNavigate();
   const { profile } = useProfile();
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  const [selectedSubscriptions, setSelectedSubscriptions] = useState<string[]>([]);
 
   const { data: subscriptions, isLoading } = useQuery({
     queryKey: ['subscriptions'],
@@ -26,8 +24,9 @@ const Subscriptions = () => {
 
       const { data, error } = await supabase
         .from('subscriptions')
-        .select('*, products(name)')
+        .select('*, products(name, product_type)')
         .eq('user_id', user.id)
+        .eq('status', 'active')
         .order('due_date', { ascending: true });
 
       if (error) throw error;
@@ -35,27 +34,14 @@ const Subscriptions = () => {
     },
   });
 
-  const totalMonthly = subscriptions?.reduce((sum, sub) => sum + Number(sub.amount), 0) || 0;
-  const selectedTotal = subscriptions
-    ?.filter(sub => selectedSubscriptions.includes(sub.id))
-    .reduce((sum, sub) => sum + Number(sub.amount), 0) || 0;
-
-  const handleToggleSubscription = (subscriptionId: string) => {
-    setSelectedSubscriptions(prev =>
-      prev.includes(subscriptionId)
-        ? prev.filter(id => id !== subscriptionId)
-        : [...prev, subscriptionId]
-    );
-  };
-
-  const handlePaySelected = async () => {
-    if (!profile || selectedSubscriptions.length === 0) return;
+  const handlePaySubscription = async (subscriptionId: string, amount: number) => {
+    if (!profile) return;
     
     const balance = Number(profile.balance) || 0;
-    if (balance < selectedTotal) {
+    if (balance < amount) {
       toast({
         title: "Insufficient balance",
-        description: "Please deposit funds to pay for your subscriptions.",
+        description: "Please deposit funds to pay for your subscription.",
         variant: "destructive",
       });
       navigate('/profile/deposit');
@@ -63,31 +49,28 @@ const Subscriptions = () => {
     }
 
     try {
-      // Update selected subscriptions as paid
       const { error } = await supabase
         .from('subscriptions')
         .update({ 
           is_paid: true, 
           last_payment_date: new Date().toISOString() 
         })
-        .in('id', selectedSubscriptions);
+        .eq('id', subscriptionId);
 
       if (error) throw error;
 
-      // Deduct from balance
       const { error: balanceError } = await supabase
         .from('profiles')
-        .update({ balance: balance - selectedTotal })
+        .update({ balance: balance - amount })
         .eq('id', profile.id);
 
       if (balanceError) throw balanceError;
 
       toast({
         title: "Payment successful",
-        description: `ZMK ${selectedTotal.toFixed(2)} has been deducted from your balance.`,
+        description: `ZMK ${amount.toFixed(2)} has been deducted from your balance.`,
       });
 
-      setSelectedSubscriptions([]);
       queryClient.invalidateQueries({ queryKey: ['subscriptions'] });
       queryClient.invalidateQueries({ queryKey: ['profile'] });
     } catch (error: any) {
@@ -99,52 +82,34 @@ const Subscriptions = () => {
     }
   };
 
-  const handleQuickPayAll = async () => {
-    if (!profile) return;
-    
-    const balance = Number(profile.balance) || 0;
-    if (balance < totalMonthly) {
-      toast({
-        title: "Insufficient balance",
-        description: "Please deposit funds to pay for your subscriptions.",
-        variant: "destructive",
-      });
-      navigate('/profile/deposit');
-      return;
-    }
-
+  const handleRemoveProduct = async (productId: string, subscriptionId: string) => {
     try {
-      const subscriptionIds = subscriptions?.map(sub => sub.id) || [];
-      
-      // Update all subscriptions as paid
-      const { error } = await supabase
+      // Set product as inactive (removes from search results)
+      const { error: productError } = await supabase
+        .from('products')
+        .update({ is_active: false })
+        .eq('id', productId);
+
+      if (productError) throw productError;
+
+      // Cancel subscription
+      const { error: subError } = await supabase
         .from('subscriptions')
-        .update({ 
-          is_paid: true, 
-          last_payment_date: new Date().toISOString() 
-        })
-        .in('id', subscriptionIds);
+        .update({ status: 'cancelled' })
+        .eq('id', subscriptionId);
 
-      if (error) throw error;
-
-      // Deduct from balance
-      const { error: balanceError } = await supabase
-        .from('profiles')
-        .update({ balance: balance - totalMonthly })
-        .eq('id', profile.id);
-
-      if (balanceError) throw balanceError;
+      if (subError) throw subError;
 
       toast({
-        title: "Payment successful",
-        description: `ZMK ${totalMonthly.toFixed(2)} has been deducted from your balance.`,
+        title: "Product removed",
+        description: "Product has been removed from search results.",
       });
 
       queryClient.invalidateQueries({ queryKey: ['subscriptions'] });
-      queryClient.invalidateQueries({ queryKey: ['profile'] });
+      queryClient.invalidateQueries({ queryKey: ['products'] });
     } catch (error: any) {
       toast({
-        title: "Payment failed",
+        title: "Error",
         description: error.message,
         variant: "destructive",
       });
@@ -162,13 +127,12 @@ const Subscriptions = () => {
 
       <Card>
         <CardHeader>
-          <CardTitle>Monthly Subscription Total</CardTitle>
+          <CardTitle>Your Balance</CardTitle>
         </CardHeader>
-        <CardContent className="space-y-4">
-          <p className="text-3xl font-bold">ZMK {totalMonthly.toFixed(2)}</p>
-          <div className="flex items-center justify-between p-3 bg-muted rounded-lg">
-            <span className="text-sm font-medium">Your Balance:</span>
-            <span className="text-lg font-bold">ZMK {(Number(profile?.balance) || 0).toFixed(2)}</span>
+        <CardContent>
+          <div className="flex items-center justify-between p-4 bg-muted rounded-lg">
+            <span className="text-sm font-medium">Available Balance:</span>
+            <span className="text-2xl font-bold">ZMK {(Number(profile?.balance) || 0).toFixed(2)}</span>
           </div>
         </CardContent>
       </Card>
@@ -189,25 +153,51 @@ const Subscriptions = () => {
               {subscriptions.map((subscription) => (
                 <div
                   key={subscription.id}
-                  className="flex items-center gap-4 p-4 border rounded-lg"
+                  className="flex items-center justify-between p-4 border rounded-lg hover:bg-muted/50 transition-colors"
                 >
-                  <Checkbox
-                    checked={selectedSubscriptions.includes(subscription.id)}
-                    onCheckedChange={() => handleToggleSubscription(subscription.id)}
-                  />
                   <div className="flex-1 space-y-1">
-                    <p className="font-semibold">{subscription.products?.name}</p>
-                    <p className="text-sm text-muted-foreground">
-                      Due: {new Date(subscription.due_date).toLocaleDateString()}
-                    </p>
+                    <p className="font-semibold text-lg">{subscription.products?.name}</p>
+                    <div className="flex items-center gap-3">
+                      <Badge variant="outline">
+                        {subscription.products?.product_type === 'service' ? 'Service' : 'Good'}
+                      </Badge>
+                      <span className="text-sm text-muted-foreground">
+                        ZMK {subscription.amount}/month
+                      </span>
+                    </div>
                   </div>
-                  <div className="flex items-center gap-4">
-                    <span className="font-bold text-lg">
-                      ZMK {subscription.amount}
-                    </span>
-                    <Badge variant={subscription.is_paid ? 'default' : 'secondary'}>
-                      {subscription.is_paid ? 'Paid' : 'Unpaid'}
-                    </Badge>
+                  <div className="flex items-center gap-2">
+                    {subscription.is_paid ? (
+                      <Badge variant="default">Paid</Badge>
+                    ) : (
+                      <Button 
+                        onClick={() => handlePaySubscription(subscription.id, Number(subscription.amount))}
+                        size="sm"
+                      >
+                        Pay
+                      </Button>
+                    )}
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button variant="destructive" size="icon">
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>Remove Product</AlertDialogTitle>
+                          <AlertDialogDescription>
+                            This will remove "{subscription.products?.name}" from search results. Are you sure?
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>Cancel</AlertDialogCancel>
+                          <AlertDialogAction onClick={() => handleRemoveProduct(subscription.product_id, subscription.id)}>
+                            Remove
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
                   </div>
                 </div>
               ))}
@@ -219,28 +209,6 @@ const Subscriptions = () => {
           )}
         </CardContent>
       </Card>
-
-      {subscriptions && subscriptions.length > 0 && (
-        <div className="space-y-3">
-          <Button 
-            className="w-full" 
-            size="lg"
-            onClick={handleQuickPayAll}
-          >
-            Pay All (ZMK {totalMonthly.toFixed(2)})
-          </Button>
-          {selectedSubscriptions.length > 0 && (
-            <Button 
-              className="w-full" 
-              size="lg"
-              variant="outline"
-              onClick={handlePaySelected}
-            >
-              Pay Selected ({selectedSubscriptions.length}) - ZMK {selectedTotal.toFixed(2)}
-            </Button>
-          )}
-        </div>
-      )}
     </div>
   );
 };
