@@ -149,7 +149,7 @@ const Subscriptions = () => {
 
       <Card>
         <CardHeader>
-          <CardTitle>Active Subscriptions</CardTitle>
+          <CardTitle>Uploaded Products & Subscriptions</CardTitle>
         </CardHeader>
         <CardContent>
           {isLoading ? (
@@ -220,9 +220,14 @@ const Subscriptions = () => {
               ))}
             </div>
           ) : (
-            <p className="text-center text-muted-foreground py-8">
-              No active subscriptions
-            </p>
+            <div className="text-center py-8">
+              <p className="text-muted-foreground mb-4">
+                No products uploaded yet
+              </p>
+              <Button onClick={() => navigate('/uploads')} variant="outline">
+                Upload Product
+              </Button>
+            </div>
           )}
         </CardContent>
       </Card>

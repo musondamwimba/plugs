@@ -928,7 +928,7 @@ export type Database = {
     }
     Enums: {
       app_role: "admin" | "vendor" | "buyer"
-      product_condition: "new" | "like_new" | "good" | "fair" | "poor"
+      product_condition: "new" | "used" | "refurbished"
       product_type: "good" | "service"
       user_status: "active" | "suspended" | "banned" | "blocked"
     }
@@ -1059,7 +1059,7 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["admin", "vendor", "buyer"],
-      product_condition: ["new", "like_new", "good", "fair", "poor"],
+      product_condition: ["new", "used", "refurbished"],
       product_type: ["good", "service"],
       user_status: ["active", "suspended", "banned", "blocked"],
     },

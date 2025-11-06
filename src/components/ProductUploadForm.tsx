@@ -348,9 +348,20 @@ const ProductUploadForm = ({ existingProduct }: ProductUploadFormProps) => {
         setPrimaryImageIndex(0);
       }
     } catch (error: any) {
+      console.error("Product upload error:", error);
+      
+      let errorMessage = error.message || "Something went wrong. Please try again.";
+      
+      // Handle specific error cases
+      if (error.message?.includes("row-level security")) {
+        errorMessage = "Authentication error. Please log out and log back in, then try again.";
+      } else if (error.message?.includes("invalid input value for enum")) {
+        errorMessage = "Invalid condition value. Please select New, Used, or Refurbished.";
+      }
+      
       toast({
         title: "Error uploading product",
-        description: error.message || "Something went wrong. Please try again.",
+        description: errorMessage,
         variant: "destructive",
       });
     } finally {
