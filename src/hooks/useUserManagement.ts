@@ -14,10 +14,11 @@ export function useUserManagement() {
 
       if (error) throw error;
       
-      // Parse user_moderation JSON back to array
+      // Parse user_moderation and user_roles JSON back to arrays
       return data?.map((user: any) => ({
         ...user,
-        user_moderation: user.user_moderation || []
+        user_moderation: user.user_moderation || [],
+        user_roles: user.user_roles || []
       }));
     },
   });
@@ -109,9 +110,58 @@ export function useUserManagement() {
     },
   });
 
+  const upgradeToAdmin = useMutation({
+    mutationFn: async (userId: string) => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('Not authenticated');
+
+      // Check if user already has admin role
+      const { data: existingRole } = await supabase
+        .from('user_roles')
+        .select('id')
+        .eq('user_id', userId)
+        .eq('role', 'admin')
+        .maybeSingle();
+
+      if (existingRole) {
+        throw new Error('User is already an admin');
+      }
+
+      // Add admin role
+      const { error } = await supabase
+        .from('user_roles')
+        .insert({ user_id: userId, role: 'admin' });
+
+      if (error) throw error;
+
+      // Log admin action
+      await supabase.from('admin_actions').insert({
+        admin_id: user.id,
+        action_type: 'role_upgrade',
+        target_user_id: userId,
+        details: { role: 'admin' }
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['all-users'] });
+      toast({
+        title: "User upgraded",
+        description: "User has been granted admin privileges.",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
   return {
     users,
     isLoading,
     moderateUser: moderateUser.mutate,
+    upgradeToAdmin: upgradeToAdmin.mutate,
   };
 }

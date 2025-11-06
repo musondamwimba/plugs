@@ -1,11 +1,12 @@
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Shield, Users, Package, TrendingUp, Ban, AlertCircle, DollarSign, CheckCircle } from "lucide-react";
+import { Shield, Users, Package, TrendingUp, Ban, AlertCircle, DollarSign, CheckCircle, MessageSquare, UserPlus } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useState, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
+import { useNavigate } from "react-router-dom";
 import { useUserManagement } from "@/hooks/useUserManagement";
 import { useAdminSettings } from "@/hooks/useAdminSettings";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
@@ -14,8 +15,9 @@ import { Badge } from "@/components/ui/badge";
 import { ThemeControl } from "@/components/ThemeControl";
 
 const Admin = () => {
+  const navigate = useNavigate();
   const { toast } = useToast();
-  const { users, isLoading: usersLoading, moderateUser } = useUserManagement();
+  const { users, isLoading: usersLoading, moderateUser, upgradeToAdmin } = useUserManagement();
   const { settings, updateSetting } = useAdminSettings();
   
   const [depositFeeType, setDepositFeeType] = useState<'percentage' | 'fixed'>('percentage');
@@ -49,13 +51,25 @@ const Admin = () => {
     { title: "Total Users", value: users?.length || 0, icon: Users, color: "text-blue-600" },
     { title: "Active Users", value: users?.filter((u: any) => {
       const moderation = Array.isArray(u.user_moderation) ? u.user_moderation[0] : u.user_moderation?.[0];
-      return !moderation || moderation.status === 'active';
+      return (!moderation || moderation.status === 'active') && !u.deleted_at;
     }).length || 0, icon: Users, color: "text-green-600" },
     { title: "Suspended/Banned", value: users?.filter((u: any) => {
       const moderation = Array.isArray(u.user_moderation) ? u.user_moderation[0] : u.user_moderation?.[0];
       return moderation?.status === 'suspended' || moderation?.status === 'banned';
     }).length || 0, icon: Ban, color: "text-destructive" },
   ];
+
+  const handleUpgradeToAdmin = (userId: string) => {
+    upgradeToAdmin(userId);
+  };
+
+  const handleSendMessage = (userId: string) => {
+    navigate(`/messages?userId=${userId}`);
+  };
+
+  const isUserAdmin = (user: any) => {
+    return Array.isArray(user.user_roles) && user.user_roles.some((r: any) => r.role === 'admin');
+  };
 
   const handleSaveRates = () => {
     updateSetting({ key: 'deposit_fee', value: { type: depositFeeType, value: parseFloat(depositFeeValue) } });
@@ -220,7 +234,11 @@ const Admin = () => {
                   {users?.map((user: any) => (
                     <div key={user.id} className="flex items-center justify-between p-4 border rounded-lg hover:bg-muted/50">
                       <div className="flex-1">
-                        <div className="font-medium">{user.full_name || 'No name'}</div>
+                        <div className="flex items-center gap-2">
+                          <div className="font-medium">{user.full_name || 'No name'}</div>
+                          {isUserAdmin(user) && <Badge variant="default">Admin</Badge>}
+                          {user.deleted_at && <Badge variant="destructive">Deleted</Badge>}
+                        </div>
                         <div className="text-sm text-muted-foreground">{user.email}</div>
                         <div className="text-sm text-muted-foreground">{user.phone_number || 'No phone'}</div>
                         <div className="text-xs text-muted-foreground">Balance: ZMK {user.balance || 0}</div>
@@ -230,6 +248,24 @@ const Admin = () => {
                           const moderation = Array.isArray(user.user_moderation) ? user.user_moderation[0] : user.user_moderation?.[0];
                           return moderation && getStatusBadge(moderation.status);
                         })()}
+                        <Button 
+                          size="sm" 
+                          variant="ghost"
+                          onClick={() => handleSendMessage(user.id)}
+                          title="Send message"
+                        >
+                          <MessageSquare className="w-4 h-4" />
+                        </Button>
+                        {!isUserAdmin(user) && (
+                          <Button 
+                            size="sm" 
+                            variant="ghost"
+                            onClick={() => handleUpgradeToAdmin(user.id)}
+                            title="Upgrade to admin"
+                          >
+                            <UserPlus className="w-4 h-4" />
+                          </Button>
+                        )}
                         <Dialog>
                           <DialogTrigger asChild>
                             <Button 

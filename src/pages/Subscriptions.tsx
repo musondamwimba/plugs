@@ -24,9 +24,8 @@ const Subscriptions = () => {
 
       const { data, error } = await supabase
         .from('subscriptions')
-        .select('*, products(name, product_type)')
+        .select('*, products(id, name, product_type, is_active)')
         .eq('user_id', user.id)
-        .eq('status', 'active')
         .order('due_date', { ascending: true });
 
       if (error) throw error;
@@ -34,7 +33,7 @@ const Subscriptions = () => {
     },
   });
 
-  const handlePaySubscription = async (subscriptionId: string, amount: number) => {
+  const handlePaySubscription = async (subscriptionId: string, productId: string, amount: number) => {
     if (!profile) return;
     
     const balance = Number(profile.balance) || 0;
@@ -49,6 +48,7 @@ const Subscriptions = () => {
     }
 
     try {
+      // Update subscription as paid
       const { error } = await supabase
         .from('subscriptions')
         .update({ 
@@ -59,6 +59,15 @@ const Subscriptions = () => {
 
       if (error) throw error;
 
+      // Update product to show in search results
+      const { error: productError } = await supabase
+        .from('products')
+        .update({ subscription_paid: true })
+        .eq('id', productId);
+
+      if (productError) throw productError;
+
+      // Deduct balance
       const { error: balanceError } = await supabase
         .from('profiles')
         .update({ balance: balance - amount })
@@ -68,11 +77,12 @@ const Subscriptions = () => {
 
       toast({
         title: "Payment successful",
-        description: `ZMK ${amount.toFixed(2)} has been deducted from your balance.`,
+        description: `ZMK ${amount.toFixed(2)} has been deducted. Your product is now visible in search results.`,
       });
 
       queryClient.invalidateQueries({ queryKey: ['subscriptions'] });
       queryClient.invalidateQueries({ queryKey: ['profile'] });
+      queryClient.invalidateQueries({ queryKey: ['products'] });
     } catch (error: any) {
       toast({
         title: "Payment failed",
@@ -164,6 +174,12 @@ const Subscriptions = () => {
                       <span className="text-sm text-muted-foreground">
                         ZMK {subscription.amount}/month
                       </span>
+                      {subscription.status === 'cancelled' && (
+                        <Badge variant="destructive">Cancelled</Badge>
+                      )}
+                      {!subscription.products?.is_active && (
+                        <Badge variant="secondary">Inactive</Badge>
+                      )}
                     </div>
                   </div>
                   <div className="flex items-center gap-2">
@@ -171,8 +187,9 @@ const Subscriptions = () => {
                       <Badge variant="default">Paid</Badge>
                     ) : (
                       <Button 
-                        onClick={() => handlePaySubscription(subscription.id, Number(subscription.amount))}
+                        onClick={() => handlePaySubscription(subscription.id, subscription.product_id, Number(subscription.amount))}
                         size="sm"
+                        disabled={subscription.status === 'cancelled'}
                       >
                         Pay
                       </Button>

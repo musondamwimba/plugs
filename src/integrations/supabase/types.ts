@@ -915,6 +915,7 @@ export type Database = {
           id: string
           phone_number: string
           user_moderation: Json
+          user_roles: Json
         }[]
       }
       has_role: {
