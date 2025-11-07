@@ -92,6 +92,81 @@ const Subscriptions = () => {
     }
   };
 
+  const handlePayAllSubscriptions = async () => {
+    if (!profile || !subscriptions) return;
+    
+    const unpaidSubscriptions = subscriptions.filter(
+      sub => !sub.is_paid && sub.status !== 'cancelled' && sub.products?.is_active
+    );
+    
+    if (unpaidSubscriptions.length === 0) {
+      toast({
+        title: "No unpaid subscriptions",
+        description: "All your subscriptions are already paid.",
+      });
+      return;
+    }
+
+    const totalAmount = unpaidSubscriptions.reduce((sum, sub) => sum + Number(sub.amount), 0);
+    const balance = Number(profile.balance) || 0;
+
+    if (balance < totalAmount) {
+      toast({
+        title: "Insufficient balance",
+        description: `You need ZMK ${totalAmount.toFixed(2)} but have ZMK ${balance.toFixed(2)}. Please deposit funds.`,
+        variant: "destructive",
+      });
+      navigate('/profile/deposit');
+      return;
+    }
+
+    try {
+      // Update all unpaid subscriptions
+      for (const sub of unpaidSubscriptions) {
+        const { error } = await supabase
+          .from('subscriptions')
+          .update({ 
+            is_paid: true, 
+            last_payment_date: new Date().toISOString() 
+          })
+          .eq('id', sub.id);
+
+        if (error) throw error;
+
+        // Update product to show in search results
+        const { error: productError } = await supabase
+          .from('products')
+          .update({ subscription_paid: true })
+          .eq('id', sub.product_id);
+
+        if (productError) throw productError;
+      }
+
+      // Deduct total balance
+      const { error: balanceError } = await supabase
+        .from('profiles')
+        .update({ balance: balance - totalAmount })
+        .eq('id', profile.id);
+
+      if (balanceError) throw balanceError;
+
+      toast({
+        title: "All payments successful",
+        description: `ZMK ${totalAmount.toFixed(2)} deducted. ${unpaidSubscriptions.length} products are now visible in search results.`,
+      });
+
+      queryClient.invalidateQueries({ queryKey: ['subscriptions'] });
+      queryClient.invalidateQueries({ queryKey: ['profile'] });
+      queryClient.invalidateQueries({ queryKey: ['products'] });
+    } catch (error: any) {
+      toast({
+        title: "Payment failed",
+        description: error.message,
+        variant: "destructive",
+      });
+    }
+  };
+
   const handleRemoveProduct = async (productId: string, subscriptionId: string) => {
     try {
       // Set product as inactive (removes from search results)
@@ -149,7 +224,14 @@ const Subscriptions = () => {
 
       <Card>
         <CardHeader>
-          <CardTitle>Uploaded Products & Subscriptions</CardTitle>
+          <div className="flex items-center justify-between">
+            <CardTitle>Uploaded Products & Subscriptions</CardTitle>
+            {subscriptions && subscriptions.length > 0 && subscriptions.some(s => !s.is_paid && s.status !== 'cancelled' && s.products?.is_active) && (
+              <Button onClick={handlePayAllSubscriptions} size="sm">
+                Pay for All Unpaid ({subscriptions.filter(s => !s.is_paid && s.status !== 'cancelled' && s.products?.is_active).length})
+              </Button>
+            )}
+          </div>
         </CardHeader>
         <CardContent>
           {isLoading ? (
@@ -174,6 +256,11 @@ const Subscriptions = () => {
                       <span className="text-sm text-muted-foreground">
                         ZMK {subscription.amount}/month
                       </span>
+                      {subscription.is_paid ? (
+                        <Badge className="bg-green-500">✓ Paid - Visible in Search</Badge>
+                      ) : (
+                        <Badge variant="secondary">Unpaid - Not Visible</Badge>
+                      )}
                       {subscription.status === 'cancelled' && (
                         <Badge variant="destructive">Cancelled</Badge>
                       )}
@@ -183,15 +270,13 @@ const Subscriptions = () => {
                     </div>
                   </div>
                   <div className="flex items-center gap-2">
-                    {subscription.is_paid ? (
-                      <Badge variant="default">Paid</Badge>
-                    ) : (
+                    {!subscription.is_paid && (
                       <Button 
                         onClick={() => handlePaySubscription(subscription.id, subscription.product_id, Number(subscription.amount))}
                         size="sm"
                         disabled={subscription.status === 'cancelled'}
                       >
-                        Pay
+                        Pay ZMK {subscription.amount}
                       </Button>
                     )}
                     <AlertDialog>
