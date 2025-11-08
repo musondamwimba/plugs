@@ -241,18 +241,17 @@ const ProductUploadForm = ({ existingProduct }: ProductUploadFormProps) => {
     setIsSubmitting(true);
 
     try {
-      // Verify authentication and refresh session
-      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-      
-      if (sessionError || !session) {
-        throw new Error('Your session has expired. Please log in again.');
-      }
-
-      // Refresh session to ensure it's valid
-      await supabase.auth.refreshSession();
-      
+      // Check if user is authenticated
       const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error('You must be logged in to upload products');
+      if (!user) {
+        toast({
+          title: "Authentication required",
+          description: "Please log in to upload products.",
+          variant: "destructive",
+        });
+        navigate('/auth');
+        return;
+      }
 
       const productData: any = {
         vendor_id: user.id,
