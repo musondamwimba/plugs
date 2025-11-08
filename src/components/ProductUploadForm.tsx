@@ -241,6 +241,16 @@ const ProductUploadForm = ({ existingProduct }: ProductUploadFormProps) => {
     setIsSubmitting(true);
 
     try {
+      // Verify authentication and refresh session
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+      
+      if (sessionError || !session) {
+        throw new Error('Your session has expired. Please log in again.');
+      }
+
+      // Refresh session to ensure it's valid
+      await supabase.auth.refreshSession();
+      
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('You must be logged in to upload products');
 
@@ -309,6 +319,7 @@ const ProductUploadForm = ({ existingProduct }: ProductUploadFormProps) => {
 
       queryClient.invalidateQueries({ queryKey: ['my-products'] });
       queryClient.invalidateQueries({ queryKey: ['products'] });
+      queryClient.invalidateQueries({ queryKey: ['subscriptions'] });
       
       if (existingProduct) {
         navigate('/my-products');
@@ -318,10 +329,10 @@ const ProductUploadForm = ({ existingProduct }: ProductUploadFormProps) => {
         const subscriptionAmount = 50; // This will be fetched from admin settings by the trigger
         toast({
           title: "Product uploaded successfully!",
-          description: `Subscription fee: ZMK ${subscriptionAmount}/month. Pay now to make your product visible in search results.`,
+          description: `Your product is now in "My Products" and "Pay for Subscription". Pay ZMK ${subscriptionAmount}/month to make it visible in search results.`,
           action: (
             <Button onClick={() => navigate('/subscriptions')} size="sm">
-              Pay Now
+              Pay Subscription
             </Button>
           ),
           duration: 10000,
