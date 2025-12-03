@@ -27,6 +27,7 @@ import Subscriptions from "./pages/Subscriptions";
 import Cart from "./pages/Cart";
 import Favorites from "./pages/Favorites";
 import Checkout from "./pages/Checkout";
+import ResetPassword from "./pages/ResetPassword";
 import NotFound from "./pages/NotFound";
 
 const AdminGuard = ({ children }: { children: React.ReactNode }) => {
@@ -92,6 +93,7 @@ const App = () => (
     <BrowserRouter>
       <Routes>
         <Route path="/auth" element={<Auth />} />
+        <Route path="/reset-password" element={<ResetPassword />} />
         <Route path="/" element={<ProtectedRoute><AppLayout><Index /></AppLayout></ProtectedRoute>} />
         <Route path="/map" element={<ProtectedRoute><AppLayout><Map /></AppLayout></ProtectedRoute>} />
         <Route path="/messages" element={<ProtectedRoute><AppLayout><Messages /></AppLayout></ProtectedRoute>} />

@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -8,7 +9,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, Eye, EyeOff, Mail, Phone } from "lucide-react";
+import { Loader2, Eye, EyeOff, Mail, Phone, ArrowLeft } from "lucide-react";
 import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
 
 const Auth = () => {
@@ -30,9 +31,14 @@ const Auth = () => {
   });
   const [showOTP, setShowOTP] = useState(false);
   const [otp, setOtp] = useState("");
-  const [forgotPasswordEmail, setForgotPasswordEmail] = useState("");
   const [showForgotPassword, setShowForgotPassword] = useState(false);
+  const [forgotMethod, setForgotMethod] = useState<'email' | 'phone'>('email');
+  const [forgotEmail, setForgotEmail] = useState("");
+  const [forgotPhone, setForgotPhone] = useState("");
+  const [forgotOTP, setForgotOTP] = useState("");
+  const [showForgotOTP, setShowForgotOTP] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [resetLoading, setResetLoading] = useState(false);
 
   useEffect(() => {
     if (user) {
@@ -124,6 +130,225 @@ const Auth = () => {
     }
   };
 
+  const handleForgotPassword = async () => {
+    setResetLoading(true);
+
+    if (forgotMethod === 'email') {
+      if (!forgotEmail) {
+        toast({
+          title: "Email required",
+          description: "Please enter your email address.",
+          variant: "destructive",
+        });
+        setResetLoading(false);
+        return;
+      }
+
+      const { error } = await supabase.auth.resetPasswordForEmail(forgotEmail, {
+        redirectTo: `${window.location.origin}/reset-password`,
+      });
+
+      if (error) {
+        toast({
+          title: "Error",
+          description: error.message,
+          variant: "destructive",
+        });
+      } else {
+        toast({
+          title: "Reset link sent!",
+          description: "Check your email for the password reset link.",
+        });
+        setShowForgotPassword(false);
+        setForgotEmail("");
+      }
+    } else {
+      // Phone OTP flow
+      if (!forgotPhone) {
+        toast({
+          title: "Phone number required",
+          description: "Please enter your phone number.",
+          variant: "destructive",
+        });
+        setResetLoading(false);
+        return;
+      }
+
+      const { error } = await supabase.auth.signInWithOtp({
+        phone: forgotPhone,
+      });
+
+      if (error) {
+        toast({
+          title: "Error",
+          description: error.message,
+          variant: "destructive",
+        });
+      } else {
+        setShowForgotOTP(true);
+        toast({
+          title: "OTP sent!",
+          description: "Check your phone for the verification code.",
+        });
+      }
+    }
+
+    setResetLoading(false);
+  };
+
+  const handleVerifyForgotOTP = async () => {
+    if (forgotOTP.length !== 6) {
+      toast({
+        title: "Invalid OTP",
+        description: "Please enter a valid 6-digit code.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setResetLoading(true);
+
+    const { error } = await supabase.auth.verifyOtp({
+      phone: forgotPhone,
+      token: forgotOTP,
+      type: 'sms',
+    });
+
+    if (error) {
+      toast({
+        title: "Verification failed",
+        description: error.message,
+        variant: "destructive",
+      });
+    } else {
+      toast({
+        title: "Verified!",
+        description: "Redirecting to reset password...",
+      });
+      navigate('/reset-password');
+    }
+
+    setResetLoading(false);
+  };
+
+  const renderForgotPassword = () => (
+    <div className="space-y-4">
+      <Button
+        variant="ghost"
+        className="mb-2 -ml-2"
+        onClick={() => {
+          setShowForgotPassword(false);
+          setShowForgotOTP(false);
+          setForgotOTP("");
+        }}
+      >
+        <ArrowLeft className="w-4 h-4 mr-2" />
+        Back to Login
+      </Button>
+
+      <div className="text-center mb-4">
+        <h3 className="font-semibold text-lg">Forgot Password</h3>
+        <p className="text-sm text-muted-foreground">
+          {showForgotOTP 
+            ? "Enter the verification code sent to your phone" 
+            : "Choose how you'd like to reset your password"}
+        </p>
+      </div>
+
+      {showForgotOTP ? (
+        <div className="space-y-4">
+          <div className="flex justify-center">
+            <InputOTP maxLength={6} value={forgotOTP} onChange={setForgotOTP}>
+              <InputOTPGroup>
+                <InputOTPSlot index={0} />
+                <InputOTPSlot index={1} />
+                <InputOTPSlot index={2} />
+                <InputOTPSlot index={3} />
+                <InputOTPSlot index={4} />
+                <InputOTPSlot index={5} />
+              </InputOTPGroup>
+            </InputOTP>
+          </div>
+          <Button 
+            onClick={handleVerifyForgotOTP} 
+            className="w-full"
+            disabled={resetLoading}
+          >
+            {resetLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+            Verify & Continue
+          </Button>
+          <Button 
+            variant="outline" 
+            onClick={() => setShowForgotOTP(false)} 
+            className="w-full"
+          >
+            Back
+          </Button>
+        </div>
+      ) : (
+        <>
+          <div className="flex gap-2 mb-4">
+            <Button
+              type="button"
+              variant={forgotMethod === 'email' ? 'default' : 'outline'}
+              className="flex-1"
+              onClick={() => setForgotMethod('email')}
+            >
+              <Mail className="w-4 h-4 mr-2" />
+              Email
+            </Button>
+            <Button
+              type="button"
+              variant={forgotMethod === 'phone' ? 'default' : 'outline'}
+              className="flex-1"
+              onClick={() => setForgotMethod('phone')}
+            >
+              <Phone className="w-4 h-4 mr-2" />
+              Phone
+            </Button>
+          </div>
+
+          {forgotMethod === 'email' ? (
+            <div className="space-y-2">
+              <Label>Email Address</Label>
+              <Input
+                type="email"
+                value={forgotEmail}
+                onChange={(e) => setForgotEmail(e.target.value)}
+                placeholder="Enter your email"
+              />
+              <p className="text-xs text-muted-foreground">
+                We'll send a password reset link to your email.
+              </p>
+            </div>
+          ) : (
+            <div className="space-y-2">
+              <Label>Phone Number</Label>
+              <Input
+                type="tel"
+                value={forgotPhone}
+                onChange={(e) => setForgotPhone(e.target.value)}
+                placeholder="+260..."
+              />
+              <p className="text-xs text-muted-foreground">
+                We'll send a one-time PIN to your phone.
+              </p>
+            </div>
+          )}
+
+          <Button 
+            onClick={handleForgotPassword} 
+            className="w-full"
+            disabled={resetLoading}
+          >
+            {resetLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+            {forgotMethod === 'email' ? 'Send Reset Link' : 'Send OTP'}
+          </Button>
+        </>
+      )}
+    </div>
+  );
+
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background via-background to-primary/5 p-4">
       <Card className="w-full max-w-md">
@@ -140,20 +365,7 @@ const Auth = () => {
             
             <TabsContent value="login">
               {showForgotPassword ? (
-                <div className="space-y-4">
-                  <Input
-                    type="email"
-                    value={forgotPasswordEmail}
-                    onChange={(e) => setForgotPasswordEmail(e.target.value)}
-                    placeholder="Enter your email"
-                  />
-                  <Button onClick={() => { toast({ title: "Reset email sent" }); setShowForgotPassword(false); }} className="w-full">
-                    Reset Password
-                  </Button>
-                  <Button variant="outline" onClick={() => setShowForgotPassword(false)} className="w-full">
-                    Cancel
-                  </Button>
-                </div>
+                renderForgotPassword()
               ) : (
                 <form onSubmit={handleLogin} className="space-y-4">
                   <div className="flex gap-2 mb-4">
