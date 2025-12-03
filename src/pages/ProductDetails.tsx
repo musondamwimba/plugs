@@ -1,6 +1,6 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, MapPin, Calendar } from "lucide-react";
+import { ArrowLeft, MapPin, Calendar, MessageCircle } from "lucide-react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -9,6 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "@/components/ui/carousel";
 import { useCart } from "@/hooks/useCart";
 import { useFavorites } from "@/hooks/useFavorites";
+import AskForInfoDialog from "@/components/AskForInfoDialog";
 
 const ProductDetails = () => {
   const navigate = useNavigate();
@@ -192,6 +193,11 @@ const ProductDetails = () => {
                 >
                   Add to Favorites
                 </Button>
+                <AskForInfoDialog
+                  productId={product.id}
+                  productName={product.name}
+                  vendorId={product.vendor_id}
+                />
               </div>
             </CardContent>
           </Card>

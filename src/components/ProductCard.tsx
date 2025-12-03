@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Card, CardContent, CardHeader, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Heart, MapPin, ShoppingCart, Eye, Gavel } from "lucide-react";
+import { Heart, ShoppingCart, Gavel } from "lucide-react";
 import { useCart } from "@/hooks/useCart";
 import { useFavorites } from "@/hooks/useFavorites";
 import { useAuth } from "@/contexts/AuthContext";
@@ -10,6 +10,7 @@ import { useNavigate } from "react-router-dom";
 import { useBids } from "@/hooks/useBids";
 import { formatDistanceToNow } from "date-fns";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import AskForInfoDialog from "./AskForInfoDialog";
 
 interface ProductCardProps {
   id?: string;
@@ -22,6 +23,7 @@ interface ProductCardProps {
   starting_bid?: number;
   currentHighestBid?: number;
   bids?: Array<{ amount: number }>;
+  vendor_id?: string;
 }
 
 const ProductCard = ({ 
@@ -34,7 +36,8 @@ const ProductCard = ({
   bid_end_time,
   starting_bid,
   currentHighestBid,
-  bids
+  bids,
+  vendor_id
 }: ProductCardProps) => {
   const { addToCart } = useCart();
   const { addFavorite, removeFavorite, favorites } = useFavorites();
@@ -178,6 +181,13 @@ const ProductCard = ({
             <ShoppingCart className="w-4 h-4" />
             Add to Cart
           </Button>
+        )}
+        {id && vendor_id && (
+          <AskForInfoDialog 
+            productId={id} 
+            productName={name} 
+            vendorId={vendor_id} 
+          />
         )}
         <Button
           size="icon"

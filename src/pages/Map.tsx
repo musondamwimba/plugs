@@ -15,6 +15,7 @@ import { useProducts } from "@/hooks/useProducts";
 import { useCart } from "@/hooks/useCart";
 import { useFavorites } from "@/hooks/useFavorites";
 import { useToast } from "@/hooks/use-toast";
+import { fuzzyMatch } from "@/lib/fuzzySearch";
 
 // Fix for default marker icon
 delete (Icon.Default.prototype as any)._getIconUrl;
@@ -90,8 +91,12 @@ const Map = () => {
     if (productType === "good" && product.product_type !== "good") return false;
     if (productType === "service" && product.product_type !== "service") return false;
     
-    // Filter by search query
-    if (searchQuery && !product.name.toLowerCase().includes(searchQuery.toLowerCase())) return false;
+    // Filter by search query using fuzzy matching
+    if (searchQuery) {
+      const matchesName = fuzzyMatch(searchQuery, product.name);
+      const matchesDesc = product.description ? fuzzyMatch(searchQuery, product.description) : false;
+      if (!matchesName && !matchesDesc) return false;
+    }
     
     // Filter by radius unless searching whole Zambia
     if (!searchWholeZambia && userLocation) {

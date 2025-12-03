@@ -41,10 +41,12 @@ const Favorites = () => {
           {favorites.map((fav: any) => (
             <ProductCard
               key={fav.id}
+              id={fav.products.id}
               name={fav.products.name}
               price={fav.products.price}
               description={fav.products.description}
               image={fav.products.product_images?.[0]?.image_url}
+              vendor_id={fav.products.vendor_id}
             />
           ))}
         </div>

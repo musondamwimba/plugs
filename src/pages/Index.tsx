@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import SearchBar from "@/components/SearchBar";
 import Slideshow from "@/components/Slideshow";
@@ -12,6 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { ShoppingCart } from "lucide-react";
+import { fuzzySearchProducts } from "@/lib/fuzzySearch";
 
 const Index = () => {
   const navigate = useNavigate();
@@ -43,14 +44,20 @@ const Index = () => {
     setSearchQuery(query);
   };
 
-  let filteredProducts = searchQuery && products
-    ? products.filter(p => {
-        const matchesQuery = p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          p.description?.toLowerCase().includes(searchQuery.toLowerCase());
-        const matchesType = productType === "both" || p.product_type === productType;
-        return matchesQuery && matchesType;
-      })
-    : products?.filter(p => productType === "both" || p.product_type === productType);
+  // Apply fuzzy search and type filter
+  let filteredProducts = (() => {
+    if (!products) return [];
+    
+    // Filter by type first
+    let typeFiltered = products.filter(p => productType === "both" || p.product_type === productType);
+    
+    // Apply fuzzy search if there's a query
+    if (searchQuery) {
+      return fuzzySearchProducts(typeFiltered, searchQuery);
+    }
+    
+    return typeFiltered;
+  })();
 
   // Sort products
   if (filteredProducts && sortBy !== "default") {
@@ -190,7 +197,7 @@ const Index = () => {
                 : undefined;
 
               return (
-                <ProductCard 
+              <ProductCard 
                   key={product.id}
                   id={product.id}
                   name={product.name}
@@ -202,6 +209,7 @@ const Index = () => {
                   starting_bid={product.starting_bid}
                   currentHighestBid={highestBid}
                   bids={product.bids}
+                  vendor_id={product.vendor_id}
                 />
               );
             })
